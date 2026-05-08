@@ -6,26 +6,61 @@ from django.contrib.auth.models import User
 from events.models import Participant
 from donations.models import Donation
 from .models import UserProfile
-from .forms import CustomUserCreationForm  # ← IMPORTER LE FORMULAIRE PERSONNALISÉ
+from .forms import CustomUserCreationForm
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User, Group
 from django.http import JsonResponse
 from django.db import models
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_http_methods
 
+@csrf_protect
+@require_http_methods(["GET", "POST"])
 def register(request):
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)  # ← UTILISER LE FORMULAIRE PERSONNALISÉ
+        print("=== DÉBUT INSCRIPTION ===")
+        print("POST data:", request.POST)
+        
+        form = CustomUserCreationForm(request.POST)
+        
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, f"Bienvenue {user.username} ! Votre compte a été créé avec succès.")
-            return redirect('dashboard')
+            print("Formulaire VALIDE - Création du compte...")
+            try:
+                user = form.save()
+                login(request, user)
+                messages.success(request, f"Bienvenue {user.username} ! Votre compte a été créé avec succès.")
+                print(f"Compte créé pour {user.username}")
+                return redirect('dashboard')
+            except Exception as e:
+                print(f"Erreur lors de la création: {e}")
+                messages.error(request, f"Erreur technique: {str(e)}")
         else:
-            for error in form.errors.values():
-                messages.error(request, error)
+            print("Formulaire INVALIDE")
+            print("Erreurs détaillées:", form.errors)
+            # Afficher chaque erreur individuellement
+            for field, errors in form.errors.items():
+                field_label = {
+                    'username': 'Nom d\'utilisateur',
+                    'email': 'Email',
+                    'password1': 'Mot de passe',
+                    'password2': 'Confirmation mot de passe',
+                    'member_type': 'Statut',
+                    'phone_number': 'Téléphone',
+                    'address': 'Adresse',
+                    'birth_date': 'Date de naissance',
+                    'department': 'Département',
+                }.get(field, field)
+                
+                for error in errors:
+                    messages.error(request, f"{field_label}: {error}")
     else:
-        form = CustomUserCreationForm()  # ← UTILISER LE FORMULAIRE PERSONNALISÉ
+        # Formulaire GET avec valeurs par défaut pour mobile
+        initial_data = {
+            'member_type': 'guest',
+        }
+        form = CustomUserCreationForm(initial=initial_data)
+    
     return render(request, 'accounts/register.html', {'form': form})
 
 def user_login(request):
@@ -75,8 +110,6 @@ def profile_edit(request):
         profile.address = request.POST.get('address', '')
         profile.church = request.POST.get('church', '')
         profile.bio = request.POST.get('bio', '')
-        
-        # Mettre à jour les nouveaux champs
         profile.member_type = request.POST.get('member_type', profile.member_type)
         profile.department = request.POST.get('department', '')
         profile.is_regular_member = request.POST.get('is_regular_member') == 'on'
@@ -86,7 +119,6 @@ def profile_edit(request):
         
         profile.save()
         
-        # Si membre du staff, mettre à jour is_staff
         if profile.member_type == 'staff':
             request.user.is_staff = True
         else:
@@ -100,23 +132,19 @@ def profile_edit(request):
 
 @login_required
 def delete_account(request):
-    """Supprimer définitivement le compte de l'utilisateur"""
     if request.method == 'POST':
         password = request.POST.get('password')
         confirmation = request.POST.get('confirmation')
         
-        # Vérifier le mot de passe
         user = authenticate(request, username=request.user.username, password=password)
         if not user:
             messages.error(request, "Mot de passe incorrect.")
             return redirect('delete_account')
         
-        # Vérifier la confirmation
         if confirmation != 'SUPPRIMER':
             messages.error(request, 'Veuillez taper "SUPPRIMER" pour confirmer la suppression.')
             return redirect('delete_account')
         
-        # Supprimer le compte
         username = request.user.username
         request.user.delete()
         messages.success(request, f'Votre compte "{username}" a été supprimé avec succès.')
@@ -126,12 +154,8 @@ def delete_account(request):
 
 @staff_member_required
 def manage_users(request):
-    """Page d'administration des utilisateurs (réservée aux staff)"""
-    
-    # Récupérer tous les utilisateurs
     users_list = User.objects.all().order_by('-date_joined')
     
-    # Filtres
     search = request.GET.get('search', '')
     role = request.GET.get('role', '')
     status = request.GET.get('status', '')
@@ -156,7 +180,6 @@ def manage_users(request):
     elif status == 'inactive':
         users_list = users_list.filter(is_active=False)
     
-    # Pagination
     paginator = Paginator(users_list, 20)
     page_number = request.GET.get('page', 1)
     users = paginator.get_page(page_number)
@@ -174,7 +197,6 @@ def manage_users(request):
 
 @staff_member_required
 def toggle_user_status(request, user_id):
-    """Activer/Désactiver un utilisateur"""
     user = get_object_or_404(User, id=user_id)
     user.is_active = not user.is_active
     user.save()
@@ -183,9 +205,7 @@ def toggle_user_status(request, user_id):
 
 @staff_member_required
 def toggle_user_staff(request, user_id):
-    """Rendre utilisateur staff ou non"""
     user = get_object_or_404(User, id=user_id)
-    # Ne pas modifier les superusers
     if not user.is_superuser:
         user.is_staff = not user.is_staff
         user.save()
@@ -196,9 +216,7 @@ def toggle_user_staff(request, user_id):
 
 @staff_member_required
 def delete_user(request, user_id):
-    """Supprimer un utilisateur"""
     user = get_object_or_404(User, id=user_id)
-    # Ne pas supprimer soi-même
     if user == request.user:
         messages.error(request, '❌ Vous ne pouvez pas supprimer votre propre compte depuis cette page.')
         return redirect('manage_users')
@@ -210,7 +228,6 @@ def delete_user(request, user_id):
 
 @staff_member_required
 def make_superuser(request, user_id):
-    """Promouvoir un utilisateur en superutilisateur"""
     user = get_object_or_404(User, id=user_id)
     if user == request.user:
         messages.warning(request, '⚠️ Vous êtes déjà superutilisateur')
@@ -223,7 +240,6 @@ def make_superuser(request, user_id):
 
 @staff_member_required
 def api_user_detail(request, user_id):
-    """API pour récupérer les détails d'un utilisateur (AJAX)"""
     user = get_object_or_404(User, id=user_id)
     profile = user.profile
     
