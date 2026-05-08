@@ -14,157 +14,147 @@
             <p>Rejoignez notre communauté et grandissez dans la foi</p>
         </div>
 
-        <!-- AFFICHAGE DES MESSAGES DE DEBUG -->
+        <!-- Messages d'erreur Django -->
         {% if messages %}
             {% for message in messages %}
-                <div class="alert-message" style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f5c6cb;">
+                <div class="alert-message {% if message.tags %}alert-{{ message.tags }}{% endif %}">
                     <i class="bi bi-exclamation-triangle-fill"></i> {{ message }}
                 </div>
             {% endfor %}
         {% endif %}
 
-        <form method="post" class="register-form" action="">
+        <!-- Erreurs du formulaire -->
+        {% if form.errors %}
+            <div class="form-errors">
+                <strong><i class="bi bi-exclamation-triangle-fill"></i> Veuillez corriger les erreurs :</strong>
+                <ul>
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" class="register-form" id="registerForm">
             {% csrf_token %}
             
-            <!-- AFFICHAGE DES ERREURS DU FORMULAIRE -->
-            {% if form.errors %}
-                <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
-                    <strong><i class="bi bi-exclamation-triangle-fill"></i> Veuillez corriger les erreurs suivantes :</strong>
-                    <ul style="margin-top: 10px; margin-bottom: 0;">
-                        {% for field in form %}
-                            {% for error in field.errors %}
-                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-                            {% endfor %}
-                        {% endfor %}
-                        {% for error in form.non_field_errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
+            <!-- Informations du compte -->
+            <div class="form-section">
+                <h3><i class="bi bi-person-circle"></i> Informations du compte</h3>
+                
+                <div class="form-group">
+                    <label>Nom d'utilisateur <span class="required">*</span></label>
+                    <input type="text" name="username" id="id_username" 
+                           class="form-control" 
+                           placeholder="ex: jean_dupond"
+                           value="{{ form.username.value|default:'' }}"
+                           required>
+                    <small>150 caractères max. Lettres, chiffres et @/./+/-/_</small>
                 </div>
-            {% endif %}
-            
-            <!-- Champs utilisateur standards -->
-            <div class="form-group">
-                <label><i class="bi bi-person"></i> Nom d'utilisateur <span class="required">*</span></label>
-                {{ form.username }}
-                <small class="help-text"><i class="bi bi-info-circle"></i> 150 caractères maximum. Lettres, chiffres et @/./+/-/_ uniquement.</small>
-                {% for error in form.username.errors %}
-                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
-                {% endfor %}
-            </div>
 
-            <div class="form-group">
-                <label><i class="bi bi-envelope"></i> Adresse email <span class="required">*</span></label>
-                {{ form.email }}
-                <small class="help-text"><i class="bi bi-info-circle"></i> Entrez une adresse email valide.</small>
-                {% for error in form.email.errors %}
-                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
-                {% endfor %}
-            </div>
+                <div class="form-group">
+                    <label>Adresse email <span class="required">*</span></label>
+                    <input type="email" name="email" id="id_email" 
+                           class="form-control" 
+                           placeholder="ex: jean@example.com"
+                           value="{{ form.email.value|default:'' }}"
+                           required>
+                </div>
 
-            <div class="form-group">
-                <label><i class="bi bi-lock"></i> Mot de passe <span class="required">*</span></label>
-                {{ form.password1 }}
-                <small class="help-text"><i class="bi bi-info-circle"></i> Votre mot de passe doit contenir au moins 8 caractères.</small>
-                {% for error in form.password1.errors %}
-                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
-                {% endfor %}
-            </div>
+                <div class="form-group">
+                    <label>Mot de passe <span class="required">*</span></label>
+                    <input type="password" name="password1" id="id_password1" 
+                           class="form-control" 
+                           placeholder="Au moins 8 caractères"
+                           required>
+                    <small>Minimum 8 caractères</small>
+                </div>
 
-            <div class="form-group">
-                <label><i class="bi bi-check-circle"></i> Confirmation du mot de passe <span class="required">*</span></label>
-                {{ form.password2 }}
-                <small class="help-text"><i class="bi bi-info-circle"></i> Saisissez le même mot de passe que précédemment, pour vérification.</small>
-                {% for error in form.password2.errors %}
-                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
-                {% endfor %}
+                <div class="form-group">
+                    <label>Confirmer le mot de passe <span class="required">*</span></label>
+                    <input type="password" name="password2" id="id_password2" 
+                           class="form-control" 
+                           placeholder="Retapez votre mot de passe"
+                           required>
+                </div>
             </div>
 
             <!-- Informations personnelles -->
-            <div class="form-divider">
-                <span>Informations personnelles</span>
+            <div class="form-section">
+                <h3><i class="bi bi-info-circle"></i> Informations personnelles</h3>
+
+                <div class="form-group">
+                    <label>Téléphone</label>
+                    <input type="tel" name="phone_number" id="id_phone_number" 
+                           class="form-control" 
+                           placeholder="+243 XXX XXX XXX"
+                           value="{{ form.phone_number.value|default:'' }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Adresse</label>
+                    <input type="text" name="address" id="id_address" 
+                           class="form-control" 
+                           placeholder="Votre adresse complète"
+                           value="{{ form.address.value|default:'' }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Date de naissance</label>
+                    <input type="text" name="birth_date" id="id_birth_date" 
+                           class="form-control" 
+                           placeholder="JJ/MM/AAAA (ex: 25/12/1990)"
+                           value="{{ form.birth_date.value|default:'' }}">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label><i class="bi bi-telephone"></i> Téléphone</label>
-                {{ form.phone_number }}
-                {% for error in form.phone_number.errors %}
-                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
-                {% endfor %}
+            <!-- Statut dans l'église -->
+            <div class="form-section">
+                <h3><i class="bi bi-church"></i> Statut dans l'église</h3>
+
+                <div class="form-group">
+                    <label>Je suis <span class="required">*</span></label>
+                    <select name="member_type" id="id_member_type" class="form-control" required>
+                        <option value="guest" {% if form.member_type.value == 'guest' %}selected{% endif %}>Invité / Visiteur</option>
+                        <option value="regular" {% if form.member_type.value == 'regular' %}selected{% endif %}>Membre régulier</option>
+                        <option value="staff" {% if form.member_type.value == 'staff' %}selected{% endif %}>Membre du staff</option>
+                    </select>
+                </div>
+
+                <div class="form-group department-group" id="departmentGroup" style="display: none;">
+                    <label>Département</label>
+                    <select name="department" id="id_department" class="form-control">
+                        <option value="">Sélectionnez un département</option>
+                        <option value="worship" {% if form.department.value == 'worship' %}selected{% endif %}>Louange et Adoration</option>
+                        <option value="teaching" {% if form.department.value == 'teaching' %}selected{% endif %}>Enseignement</option>
+                        <option value="evangelism" {% if form.department.value == 'evangelism' %}selected{% endif %}>Évangélisation</option>
+                        <option value="social" {% if form.department.value == 'social' %}selected{% endif %}>Action sociale</option>
+                        <option value="technical" {% if form.department.value == 'technical' %}selected{% endif %}>Technique et Média</option>
+                        <option value="youth" {% if form.department.value == 'youth' %}selected{% endif %}>Jeunesse</option>
+                        <option value="women" {% if form.department.value == 'women' %}selected{% endif %}>Femmes</option>
+                        <option value="men" {% if form.department.value == 'men' %}selected{% endif %}>Hommes</option>
+                    </select>
+                </div>
+
+                <div class="form-group regular-group" id="regularGroup" style="display: none;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_regular_member" id="id_is_regular_member" 
+                               {% if form.is_regular_member.value %}checked{% endif %}>
+                        <span>Je prie déjà dans cette église</span>
+                    </label>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label><i class="bi bi-geo-alt"></i> Adresse</label>
-                {{ form.address }}
-                {% for error in form.address.errors %}
-                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                <label><i class="bi bi-calendar"></i> Date de naissance</label>
-                {{ form.birth_date }}
-                <small class="help-text"><i class="bi bi-info-circle"></i> Format: JJ/MM/AAAA</small>
-                {% for error in form.birth_date.errors %}
-                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <!-- Type de membre -->
-            <div class="form-divider">
-                <span>Statut dans la communauté</span>
-            </div>
-
-            <div class="form-group">
-                <label><i class="bi bi-person-badge"></i> Je suis <span class="required">*</span></label>
-                <select name="member_type" id="id_member_type" class="form-control" required>
-                    <option value="guest" {% if form.member_type.value == 'guest' %}selected{% endif %}>Invité / Visiteur</option>
-                    <option value="regular" {% if form.member_type.value == 'regular' %}selected{% endif %}>Membre régulier</option>
-                    <option value="staff" {% if form.member_type.value == 'staff' %}selected{% endif %}>Membre du staff</option>
-                </select>
-                {% for error in form.member_type.errors %}
-                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <!-- Département (visible uniquement si staff) -->
-            <div class="form-group department-group" id="departmentGroup" style="display: none;">
-                <label><i class="bi bi-diagram-3"></i> Département</label>
-                <select name="department" id="id_department" class="form-control">
-                    <option value="">Sélectionnez un département</option>
-                    <option value="worship" {% if form.department.value == 'worship' %}selected{% endif %}>Louange et Adoration</option>
-                    <option value="teaching" {% if form.department.value == 'teaching' %}selected{% endif %}>Enseignement</option>
-                    <option value="evangelism" {% if form.department.value == 'evangelism' %}selected{% endif %}>Évangélisation</option>
-                    <option value="social" {% if form.department.value == 'social' %}selected{% endif %}>Action sociale</option>
-                    <option value="technical" {% if form.department.value == 'technical' %}selected{% endif %}>Technique et Média</option>
-                    <option value="youth" {% if form.department.value == 'youth' %}selected{% endif %}>Jeunesse</option>
-                    <option value="women" {% if form.department.value == 'women' %}selected{% endif %}>Femmes</option>
-                    <option value="men" {% if form.department.value == 'men' %}selected{% endif %}>Hommes</option>
-                </select>
-                <small class="help-text">Sélectionnez votre département au sein du staff</small>
-                {% for error in form.department.errors %}
-                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <!-- Membre régulier -->
-            <div class="form-group regular-group" id="regularGroup" style="display: none;">
-                <label class="checkbox-label">
-                    <input type="checkbox" name="is_regular_member" id="id_is_regular_member" {% if form.is_regular_member.value %}checked{% endif %}>
-                    <span class="checkmark"></span>
-                    <span>Je prie déjà dans cette église</span>
-                </label>
-                {% for error in form.is_regular_member.errors %}
-                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
-                {% endfor %}
-            </div>
-
-            <!-- Conditions générales -->
+            <!-- Conditions -->
             <div class="form-terms">
                 <label class="checkbox-label">
-                    <input type="checkbox" name="accept_terms" required value="1">
-                    <span class="checkmark"></span>
-                    J'accepte les <a href="#">conditions d'utilisation</a> et la <a href="#">politique de confidentialité</a>
+                    <input type="checkbox" name="accept_terms" id="accept_terms" required>
+                    <span>J'accepte les <a href="#" target="_blank">conditions d'utilisation</a> et la <a href="#" target="_blank">politique de confidentialité</a></span>
                 </label>
             </div>
             
@@ -187,85 +177,91 @@
 </div>
 
 <style>
-/* Page d'inscription */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
 .register-page {
     min-height: calc(100vh - 200px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px 20px;
+    padding: 20px;
     background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
 }
 
 .register-card {
-    max-width: 600px;
+    max-width: 550px;
     width: 100%;
     background: white;
-    border-radius: 30px;
-    padding: 40px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-    transition: transform 0.3s, box-shadow 0.3s;
+    border-radius: 25px;
+    padding: 25px 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
-.register-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.15);
-}
-
-/* En-tête */
 .register-header {
     text-align: center;
-    margin-bottom: 35px;
+    margin-bottom: 25px;
 }
 
 .register-icon {
-    width: 70px;
-    height: 70px;
+    width: 60px;
+    height: 60px;
     background: linear-gradient(135deg, #27ae60, #229954);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 20px;
-    box-shadow: 0 10px 20px rgba(39,174,96,0.3);
+    margin: 0 auto 15px;
 }
 
 .register-icon i {
-    font-size: 2.2rem;
+    font-size: 1.8rem;
     color: white;
 }
 
 .register-header h1 {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     color: #2c3e50;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 
 .register-header p {
     color: #7f8c8d;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
-/* Formulaire */
-.register-form {
+/* Form sections */
+.form-section {
     margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.form-section h3 {
+    font-size: 1rem;
+    color: #27ae60;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-section h3 i {
+    font-size: 1rem;
 }
 
 .form-group {
-    margin-bottom: 22px;
+    margin-bottom: 15px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #2c3e50;
-}
-
-.form-group label i {
-    margin-right: 6px;
-    color: #27ae60;
 }
 
 .required {
@@ -275,79 +271,33 @@
 
 .form-group input, .form-group select {
     width: 100%;
-    padding: 12px 16px;
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    font-size: 0.95rem;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 0.9rem;
     transition: all 0.3s;
     background: white;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .form-group select {
-    appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 15px center;
+    background-position: right 12px center;
 }
 
 .form-group input:focus, .form-group select:focus {
     outline: none;
     border-color: #27ae60;
-    box-shadow: 0 0 0 3px rgba(39,174,96,0.1);
+    box-shadow: 0 0 0 2px rgba(39,174,96,0.1);
 }
 
-/* Help text */
-.help-text {
+.form-group small {
     display: block;
-    font-size: 0.7rem;
-    color: #95a5a6;
-    margin-top: 6px;
-}
-
-.help-text i {
-    margin-right: 4px;
     font-size: 0.65rem;
-}
-
-/* Error message */
-.error-message {
-    color: #e74c3c;
-    font-size: 0.75rem;
-    margin-top: 6px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.error-message i {
-    font-size: 0.7rem;
-}
-
-/* Form divider */
-.form-divider {
-    text-align: center;
-    margin: 25px 0 20px;
-    position: relative;
-}
-
-.form-divider::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: #e0e0e0;
-    z-index: 1;
-}
-
-.form-divider span {
-    background: white;
-    padding: 0 15px;
-    position: relative;
-    z-index: 2;
-    color: #7f8c8d;
-    font-size: 0.85rem;
+    color: #95a5a6;
+    margin-top: 5px;
 }
 
 /* Checkbox */
@@ -356,18 +306,14 @@
     align-items: center;
     gap: 10px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #555;
-}
-
-.checkbox-label input {
-    width: auto;
-    margin-right: 0;
 }
 
 .checkbox-label input[type="checkbox"] {
     width: 18px;
     height: 18px;
+    margin: 0;
     cursor: pointer;
 }
 
@@ -376,21 +322,16 @@
     text-decoration: none;
 }
 
-.checkbox-label a:hover {
-    text-decoration: underline;
-}
-
-/* Checkbox termes */
 .form-terms {
-    margin: 25px 0;
+    margin: 20px 0;
 }
 
-/* Bouton inscription */
+/* Bouton */
 .btn-register {
     width: 100%;
     background: linear-gradient(135deg, #27ae60, #229954);
     color: white;
-    padding: 14px 20px;
+    padding: 14px;
     border: none;
     border-radius: 40px;
     font-size: 1rem;
@@ -403,10 +344,8 @@
     gap: 10px;
 }
 
-.btn-register:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(39,174,96,0.4);
-    gap: 15px;
+.btn-register:active {
+    transform: scale(0.98);
 }
 
 .btn-register:disabled {
@@ -414,16 +353,37 @@
     cursor: not-allowed;
 }
 
-/* Footer */
-.register-footer {
-    text-align: center;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
+/* Messages d'erreur */
+.alert-message, .form-errors {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 0.8rem;
+    border-left: 3px solid #f5c6cb;
 }
 
-.register-footer p {
-    color: #7f8c8d;
-    font-size: 0.85rem;
+.form-errors {
+    background: #fff3cd;
+    color: #856404;
+    border-left-color: #ffc107;
+}
+
+.form-errors ul {
+    margin: 8px 0 0 20px;
+    padding: 0;
+}
+
+.form-errors li {
+    margin: 5px 0;
+}
+
+.register-footer {
+    text-align: center;
+    padding-top: 15px;
+    margin-top: 15px;
+    border-top: 1px solid #eee;
 }
 
 .register-footer a {
@@ -432,143 +392,143 @@
     font-weight: 600;
 }
 
-.register-footer a:hover {
-    text-decoration: underline;
-}
-
-/* Bénéfices */
 .register-benefits {
-    margin-top: 25px;
-    padding-top: 20px;
+    margin-top: 20px;
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 15px;
     flex-wrap: wrap;
 }
 
 .register-benefits p {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #7f8c8d;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }
 
 .register-benefits i {
     color: #27ae60;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
 }
 
-/* Alert message */
-.alert-message {
-    animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .register-card {
-        padding: 30px 25px;
-    }
-    
-    .register-header h1 {
-        font-size: 1.5rem;
-    }
-    
-    .register-icon {
-        width: 60px;
-        height: 60px;
-    }
-    
-    .register-icon i {
-        font-size: 1.8rem;
-    }
-    
-    .register-benefits {
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-    }
-}
-
+/* Responsive mobile */
 @media (max-width: 480px) {
+    .register-page {
+        padding: 10px;
+    }
+    
     .register-card {
-        padding: 25px 20px;
+        padding: 20px 15px;
     }
     
     .form-group input, .form-group select {
-        padding: 10px 14px;
+        padding: 10px;
+        font-size: 16px; /* Empêche le zoom sur iOS */
     }
     
     .btn-register {
-        padding: 12px 16px;
+        padding: 12px;
+    }
+}
+
+/* Éviter le zoom sur iOS */
+@media (max-width: 768px) {
+    input, select, textarea {
+        font-size: 16px !important;
     }
 }
 </style>
 
 <script>
-// Gestion de l'affichage des champs selon le type de membre
-const memberTypeSelect = document.querySelector('#id_member_type');
-const departmentGroup = document.getElementById('departmentGroup');
-const regularGroup = document.getElementById('regularGroup');
-
-function toggleFields() {
-    const selectedType = memberTypeSelect ? memberTypeSelect.value : 'guest';
+(function() {
+    'use strict';
     
-    if (selectedType === 'staff') {
-        if (departmentGroup) departmentGroup.style.display = 'block';
-        if (regularGroup) regularGroup.style.display = 'none';
-    } else if (selectedType === 'regular') {
-        if (departmentGroup) departmentGroup.style.display = 'none';
-        if (regularGroup) regularGroup.style.display = 'block';
-    } else {
-        if (departmentGroup) departmentGroup.style.display = 'none';
-        if (regularGroup) regularGroup.style.display = 'none';
+    console.log('Formulaire inscription chargé');
+    
+    // Gestion des champs dynamiques
+    const memberTypeSelect = document.getElementById('id_member_type');
+    const departmentGroup = document.getElementById('departmentGroup');
+    const regularGroup = document.getElementById('regularGroup');
+    
+    function toggleFields() {
+        if (!memberTypeSelect) return;
+        
+        const selectedType = memberTypeSelect.value;
+        
+        if (selectedType === 'staff') {
+            if (departmentGroup) departmentGroup.style.display = 'block';
+            if (regularGroup) regularGroup.style.display = 'none';
+        } else if (selectedType === 'regular') {
+            if (departmentGroup) departmentGroup.style.display = 'none';
+            if (regularGroup) regularGroup.style.display = 'block';
+        } else {
+            if (departmentGroup) departmentGroup.style.display = 'none';
+            if (regularGroup) regularGroup.style.display = 'none';
+        }
     }
-}
-
-if (memberTypeSelect) {
-    memberTypeSelect.addEventListener('change', toggleFields);
-    toggleFields();
-}
-
-// Désactiver le bouton pendant la soumission pour éviter les doubles clics
-const form = document.querySelector('.register-form');
-const submitBtn = document.getElementById('submitBtn');
-
-if (form) {
-    form.addEventListener('submit', function(e) {
-        // Vérifier la checkbox des conditions
-        const acceptTerms = document.querySelector('input[name="accept_terms"]');
-        if (acceptTerms && !acceptTerms.checked) {
-            e.preventDefault();
-            alert('Veuillez accepter les conditions d\'utilisation');
-            return false;
-        }
-        
-        // Désactiver le bouton
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span>Inscription en cours...</span><i class="bi bi-hourglass-split"></i>';
-        }
-        
-        // Le formulaire sera soumis normalement
-        return true;
-    });
-}
-
-// Debug - Afficher dans la console
-console.log('Formulaire d\'inscription chargé');
-console.log('Champ member_type:', memberTypeSelect ? memberTypeSelect.value : 'non trouvé');
+    
+    if (memberTypeSelect) {
+        memberTypeSelect.addEventListener('change', toggleFields);
+        toggleFields();
+    }
+    
+    // Validation du formulaire avant soumission
+    const form = document.getElementById('registerForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log('Soumission du formulaire...');
+            
+            // Vérifier les mots de passe
+            const password1 = document.getElementById('id_password1');
+            const password2 = document.getElementById('id_password2');
+            
+            if (password1 && password2 && password1.value !== password2.value) {
+                e.preventDefault();
+                alert('Les mots de passe ne correspondent pas !');
+                password2.focus();
+                return false;
+            }
+            
+            // Vérifier le mot de passe minimum
+            if (password1 && password1.value.length < 8) {
+                e.preventDefault();
+                alert('Le mot de passe doit contenir au moins 8 caractères !');
+                password1.focus();
+                return false;
+            }
+            
+            // Vérifier l'email
+            const email = document.getElementById('id_email');
+            if (email && email.value && !email.value.includes('@')) {
+                e.preventDefault();
+                alert('Veuillez entrer une adresse email valide !');
+                email.focus();
+                return false;
+            }
+            
+            // Vérifier les conditions
+            const acceptTerms = document.getElementById('accept_terms');
+            if (acceptTerms && !acceptTerms.checked) {
+                e.preventDefault();
+                alert('Veuillez accepter les conditions d\'utilisation');
+                acceptTerms.focus();
+                return false;
+            }
+            
+            // Désactiver le bouton pour éviter double soumission
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>Inscription en cours...</span><i class="bi bi-hourglass-split"></i>';
+            }
+            
+            console.log('Formulaire valide, soumission en cours...');
+            return true;
+        });
+    }
+})();
 </script>
 {% endblock %}
