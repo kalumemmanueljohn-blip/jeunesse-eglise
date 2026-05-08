@@ -121,6 +121,10 @@ LOGOUT_REDIRECT_URL = 'home'
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
+STATIC_URL = '/static/'
+STATIC_ROOT = '/opt/render/project/src/staticfiles'  # 👈 Ajoutez cette ligne
+
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
