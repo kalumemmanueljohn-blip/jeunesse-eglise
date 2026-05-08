@@ -32,7 +32,7 @@ class UserProfile(models.Model):
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="Photo de profil")
     bio = models.TextField(blank=True, max_length=500, verbose_name="Biographie")
     
-    # NOUVEAUX CHAMPS
+    # Nouveaux champs
     member_type = models.CharField(max_length=20, choices=MEMBER_TYPE_CHOICES, default='guest', verbose_name="Type de membre")
     department = models.CharField(max_length=20, choices=DEPARTMENT_CHOICES, blank=True, null=True, verbose_name="Département")
     is_regular_member = models.BooleanField(default=False, verbose_name="Prie déjà dans notre église")
@@ -59,12 +59,20 @@ class UserProfile(models.Model):
         else:
             return '<span class="badge-guest">👤 Invité</span>'
 
-# Signal pour créer automatiquement le profil
+# ============================================
+# SIGNALS
+# ============================================
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
+    """Crée un profil utilisateur automatiquement à l'inscription"""
     if created:
-        UserProfile.objects.create(user=instance)
+        UserProfile.objects.get_or_create(user=instance)
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
+    """Sauvegarde le profil quand l'utilisateur est sauvegardé"""
+    try:
+        instance.profile.save()
+    except UserProfile.DoesNotExist:
+        UserProfile.objects.create(user=instance)
