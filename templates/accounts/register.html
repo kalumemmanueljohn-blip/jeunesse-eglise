@@ -14,8 +14,34 @@
             <p>Rejoignez notre communauté et grandissez dans la foi</p>
         </div>
 
-        <form method="post" class="register-form">
+        <!-- AFFICHAGE DES MESSAGES DE DEBUG -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-message" style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f5c6cb;">
+                    <i class="bi bi-exclamation-triangle-fill"></i> {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" class="register-form" action="">
             {% csrf_token %}
+            
+            <!-- AFFICHAGE DES ERREURS DU FORMULAIRE -->
+            {% if form.errors %}
+                <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+                    <strong><i class="bi bi-exclamation-triangle-fill"></i> Veuillez corriger les erreurs suivantes :</strong>
+                    <ul style="margin-top: 10px; margin-bottom: 0;">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
             
             <!-- Champs utilisateur standards -->
             <div class="form-group">
@@ -30,6 +56,7 @@
             <div class="form-group">
                 <label><i class="bi bi-envelope"></i> Adresse email <span class="required">*</span></label>
                 {{ form.email }}
+                <small class="help-text"><i class="bi bi-info-circle"></i> Entrez une adresse email valide.</small>
                 {% for error in form.email.errors %}
                     <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
                 {% endfor %}
@@ -61,16 +88,26 @@
             <div class="form-group">
                 <label><i class="bi bi-telephone"></i> Téléphone</label>
                 {{ form.phone_number }}
+                {% for error in form.phone_number.errors %}
+                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
+                {% endfor %}
             </div>
 
             <div class="form-group">
                 <label><i class="bi bi-geo-alt"></i> Adresse</label>
                 {{ form.address }}
+                {% for error in form.address.errors %}
+                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
+                {% endfor %}
             </div>
 
             <div class="form-group">
                 <label><i class="bi bi-calendar"></i> Date de naissance</label>
                 {{ form.birth_date }}
+                <small class="help-text"><i class="bi bi-info-circle"></i> Format: JJ/MM/AAAA</small>
+                {% for error in form.birth_date.errors %}
+                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
+                {% endfor %}
             </div>
 
             <!-- Type de membre -->
@@ -80,13 +117,30 @@
 
             <div class="form-group">
                 <label><i class="bi bi-person-badge"></i> Je suis <span class="required">*</span></label>
-                {{ form.member_type }}
+                <select name="member_type" id="id_member_type" class="form-control" required>
+                    <option value="guest" {% if form.member_type.value == 'guest' %}selected{% endif %}>Invité / Visiteur</option>
+                    <option value="regular" {% if form.member_type.value == 'regular' %}selected{% endif %}>Membre régulier</option>
+                    <option value="staff" {% if form.member_type.value == 'staff' %}selected{% endif %}>Membre du staff</option>
+                </select>
+                {% for error in form.member_type.errors %}
+                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
+                {% endfor %}
             </div>
 
             <!-- Département (visible uniquement si staff) -->
             <div class="form-group department-group" id="departmentGroup" style="display: none;">
                 <label><i class="bi bi-diagram-3"></i> Département</label>
-                {{ form.department }}
+                <select name="department" id="id_department" class="form-control">
+                    <option value="">Sélectionnez un département</option>
+                    <option value="worship" {% if form.department.value == 'worship' %}selected{% endif %}>Louange et Adoration</option>
+                    <option value="teaching" {% if form.department.value == 'teaching' %}selected{% endif %}>Enseignement</option>
+                    <option value="evangelism" {% if form.department.value == 'evangelism' %}selected{% endif %}>Évangélisation</option>
+                    <option value="social" {% if form.department.value == 'social' %}selected{% endif %}>Action sociale</option>
+                    <option value="technical" {% if form.department.value == 'technical' %}selected{% endif %}>Technique et Média</option>
+                    <option value="youth" {% if form.department.value == 'youth' %}selected{% endif %}>Jeunesse</option>
+                    <option value="women" {% if form.department.value == 'women' %}selected{% endif %}>Femmes</option>
+                    <option value="men" {% if form.department.value == 'men' %}selected{% endif %}>Hommes</option>
+                </select>
                 <small class="help-text">Sélectionnez votre département au sein du staff</small>
                 {% for error in form.department.errors %}
                     <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
@@ -96,22 +150,25 @@
             <!-- Membre régulier -->
             <div class="form-group regular-group" id="regularGroup" style="display: none;">
                 <label class="checkbox-label">
-                    {{ form.is_regular_member }}
+                    <input type="checkbox" name="is_regular_member" id="id_is_regular_member" {% if form.is_regular_member.value %}checked{% endif %}>
                     <span class="checkmark"></span>
                     <span>Je prie déjà dans cette église</span>
                 </label>
+                {% for error in form.is_regular_member.errors %}
+                    <div class="error-message"><i class="bi bi-exclamation-triangle-fill"></i> {{ error }}</div>
+                {% endfor %}
             </div>
 
             <!-- Conditions générales -->
             <div class="form-terms">
                 <label class="checkbox-label">
-                    <input type="checkbox" required>
+                    <input type="checkbox" name="accept_terms" required value="1">
                     <span class="checkmark"></span>
                     J'accepte les <a href="#">conditions d'utilisation</a> et la <a href="#">politique de confidentialité</a>
                 </label>
             </div>
             
-            <button type="submit" class="btn-register">
+            <button type="submit" class="btn-register" id="submitBtn">
                 <span>S'inscrire</span>
                 <i class="bi bi-arrow-right"></i>
             </button>
@@ -304,28 +361,14 @@
 }
 
 .checkbox-label input {
-    display: none;
+    width: auto;
+    margin-right: 0;
 }
 
-.checkmark {
+.checkbox-label input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    border: 2px solid #27ae60;
-    border-radius: 4px;
-    display: inline-block;
-    position: relative;
-    background: white;
-}
-
-.checkbox-label input:checked + .checkmark::after {
-    content: "✓";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #27ae60;
-    font-size: 11px;
-    font-weight: bold;
+    cursor: pointer;
 }
 
 .checkbox-label a {
@@ -364,6 +407,11 @@
     transform: translateY(-3px);
     box-shadow: 0 10px 25px rgba(39,174,96,0.4);
     gap: 15px;
+}
+
+.btn-register:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 /* Footer */
@@ -409,6 +457,22 @@
 .register-benefits i {
     color: #27ae60;
     font-size: 0.7rem;
+}
+
+/* Alert message */
+.alert-message {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Responsive */
@@ -462,14 +526,14 @@ function toggleFields() {
     const selectedType = memberTypeSelect ? memberTypeSelect.value : 'guest';
     
     if (selectedType === 'staff') {
-        departmentGroup.style.display = 'block';
-        regularGroup.style.display = 'none';
+        if (departmentGroup) departmentGroup.style.display = 'block';
+        if (regularGroup) regularGroup.style.display = 'none';
     } else if (selectedType === 'regular') {
-        departmentGroup.style.display = 'none';
-        regularGroup.style.display = 'block';
+        if (departmentGroup) departmentGroup.style.display = 'none';
+        if (regularGroup) regularGroup.style.display = 'block';
     } else {
-        departmentGroup.style.display = 'none';
-        regularGroup.style.display = 'none';
+        if (departmentGroup) departmentGroup.style.display = 'none';
+        if (regularGroup) regularGroup.style.display = 'none';
     }
 }
 
@@ -477,5 +541,34 @@ if (memberTypeSelect) {
     memberTypeSelect.addEventListener('change', toggleFields);
     toggleFields();
 }
+
+// Désactiver le bouton pendant la soumission pour éviter les doubles clics
+const form = document.querySelector('.register-form');
+const submitBtn = document.getElementById('submitBtn');
+
+if (form) {
+    form.addEventListener('submit', function(e) {
+        // Vérifier la checkbox des conditions
+        const acceptTerms = document.querySelector('input[name="accept_terms"]');
+        if (acceptTerms && !acceptTerms.checked) {
+            e.preventDefault();
+            alert('Veuillez accepter les conditions d\'utilisation');
+            return false;
+        }
+        
+        // Désactiver le bouton
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>Inscription en cours...</span><i class="bi bi-hourglass-split"></i>';
+        }
+        
+        // Le formulaire sera soumis normalement
+        return true;
+    });
+}
+
+// Debug - Afficher dans la console
+console.log('Formulaire d\'inscription chargé');
+console.log('Champ member_type:', memberTypeSelect ? memberTypeSelect.value : 'non trouvé');
 </script>
 {% endblock %}
