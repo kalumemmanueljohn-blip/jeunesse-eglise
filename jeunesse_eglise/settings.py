@@ -8,7 +8,7 @@ SECRET_KEY = 'django-insecure-change-this-in-production-123456789'
 DEBUG = True
 
 ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
-ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://jmc-Cité-bethel-bandal-mouleart.onrender.com']
 
 # ============================================
 # APPLICATIONS INSTALLÉES
