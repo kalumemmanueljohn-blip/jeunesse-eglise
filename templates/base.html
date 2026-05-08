@@ -683,7 +683,7 @@
         </div>
     </footer>
 
-    <script>
+        <script>
         // ========== MENU HAMBURGER ==========
         const hamburger = document.getElementById('hamburgerBtn');
         const navMenu = document.getElementById('navMenu');
@@ -722,62 +722,82 @@
             }
         });
 
-        // ========== VERSET DU JOUR AVEC API ==========
-        async function getVerseFromAPI() {
-            const today = new Date().toDateString();
-            const stored = localStorage.getItem('dailyVerse');
-            
-            if (stored && JSON.parse(stored).date === today) {
-                const verse = JSON.parse(stored).verse;
-                displayVerse(verse.text, verse.ref);
-                return;
-            }
-            
-            try {
-                const response = await fetch('https://bible-api.com/john%203:16?translation=kjv');
-                if (response.ok) {
-                    const data = await response.json();
-                    const verse = {
-                        text: data.text.replace(/[“”]/g, '"'),
-                        ref: data.reference
-                    };
-                    localStorage.setItem('dailyVerse', JSON.stringify({ date: today, verse: verse }));
-                    displayVerse(verse.text, verse.ref);
-                    return;
-                }
-            } catch (error) {
-                console.log('API échouée, utilisation versets locaux...');
-            }
-            
-            const localVerses = [
-                { text: "Je puis tout par celui qui me fortifie", ref: "Philippiens 4:13" },
-                { text: "Aimez-vous les uns les autres", ref: "Jean 15:12" },
-                { text: "Cherchez premièrement le royaume de Dieu", ref: "Matthieu 6:33" },
-                { text: "L'Éternel est mon berger", ref: "Psaume 23:1" },
-                { text: "Ne crains rien, car je suis avec toi", ref: "Ésaïe 41:10" },
-                { text: "Dieu est amour", ref: "1 Jean 4:8" },
-                { text: "Réjouissez-vous toujours dans le Seigneur", ref: "Philippiens 4:4" }
-            ];
-            
-            const randomIndex = Math.floor(Math.random() * localVerses.length);
-            const verse = localVerses[randomIndex];
-            localStorage.setItem('dailyVerse', JSON.stringify({ date: today, verse: verse }));
-            displayVerse(verse.text, verse.ref);
-        }
+        // ========== VERSET ALEATOIRE AVEC API BIBLE (CORRIGÉ) ==========
         
-        function displayVerse(text, ref) {
+        // Liste des références bibliques populaires
+        const bibleVerses = [
+            { ref: "john%203:16", name: "Jean 3:16" },
+            { ref: "philippians%204:13", name: "Philippiens 4:13" },
+            { ref: "romans%208:28", name: "Romains 8:28" },
+            { ref: "jeremiah%2029:11", name: "Jérémie 29:11" },
+            { ref: "psalms%2023:1", name: "Psaume 23:1" },
+            { ref: "john%2010:10", name: "Jean 10:10" },
+            { ref: "matthew%205:14", name: "Matthieu 5:14" },
+            { ref: "proverbs%203:5-6", name: "Proverbes 3:5-6" },
+            { ref: "isaiah%2040:31", name: "Ésaïe 40:31" },
+            { ref: "matthew%2011:28", name: "Matthieu 11:28" },
+            { ref: "ephesians%202:8", name: "Éphésiens 2:8" },
+            { ref: "1%20corinthians%2013:4-7", name: "1 Corinthiens 13:4-7" }
+        ];
+
+        // Versets locaux de secours (français)
+        const localVerses = [
+            { text: "Car Dieu a tant aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne périsse pas, mais qu'il ait la vie éternelle.", ref: "Jean 3:16" },
+            { text: "Je puis tout par celui qui me fortifie.", ref: "Philippiens 4:13" },
+            { text: "Nous savons que toutes choses concourent au bien de ceux qui aiment Dieu.", ref: "Romains 8:28" },
+            { text: "Car je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur.", ref: "Jérémie 29:11" },
+            { text: "L'Éternel est mon berger, je ne manquerai de rien.", ref: "Psaume 23:1" },
+            { text: "Je suis venu afin que les brebis aient la vie, et qu'elles l'aient en abondance.", ref: "Jean 10:10" },
+            { text: "Vous êtes la lumière du monde.", ref: "Matthieu 5:14" },
+            { text: "Confie-toi en l'Éternel de tout ton cœur, et ne t'appuie pas sur ta sagesse.", ref: "Proverbes 3:5-6" },
+            { text: "Mais ceux qui espèrent en l'Éternel renouvellent leurs forces.", ref: "Ésaïe 40:31" },
+            { text: "Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos.", ref: "Matthieu 11:28" },
+            { text: "Car c'est par la grâce que vous êtes sauvés, par le moyen de la foi.", ref: "Éphésiens 2:8" },
+            { text: "L'amour est patient, il est plein de bonté...", ref: "1 Corinthiens 13:4-7" }
+        ];
+
+        async function getRandomVerse() {
             const verseText = document.getElementById('verseText');
             const verseRef = document.getElementById('verseRef');
             
-            if (verseText && verseRef) {
-                verseText.innerHTML = `“${text}”`;
-                verseRef.innerHTML = `— ${ref}`;
+            // Afficher chargement
+            if (verseText) verseText.innerHTML = "Chargement du verset...";
+            if (verseRef) verseRef.innerHTML = '<div class="verse-loading"><span></span><span></span><span></span></div>';
+            
+            // Choisir un verset aléatoirement
+            const randomIndex = Math.floor(Math.random() * bibleVerses.length);
+            const selectedVerse = bibleVerses[randomIndex];
+            
+            try {
+                // Appel API avec le verset aléatoire
+                const response = await fetch(`https://bible-api.com/${selectedVerse.ref}?translation=lsg&json=1`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.text && data.reference) {
+                        let text = data.text.replace(/[“”]/g, '"');
+                        // Nettoyer les retours à la ligne
+                        text = text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+                        
+                        if (verseText) verseText.innerHTML = `“${text}”`;
+                        if (verseRef) verseRef.innerHTML = `— ${data.reference}`;
+                        return;
+                    }
+                }
+                throw new Error('API response invalide');
+            } catch (error) {
+                console.log('API échouée, utilisation verset local...', error);
+                // Fallback vers un verset local aléatoire
+                const localIndex = Math.floor(Math.random() * localVerses.length);
+                const verse = localVerses[localIndex];
+                if (verseText) verseText.innerHTML = `“${verse.text}”`;
+                if (verseRef) verseRef.innerHTML = `— ${verse.ref}`;
             }
         }
         
-        getVerseFromAPI();
+        // Lancer un nouveau verset aléatoire à chaque chargement
+        getRandomVerse();
     </script>
-    
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>
