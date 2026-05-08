@@ -608,9 +608,7 @@
                 {% if user.is_staff %}
                 <li><a href="{% url 'subscribers_list' %}" class="nav-link"><i class="bi bi-people"></i> Abonnés WhatsApp</a></li>
                 {% endif %}
-                {% if user.is_staff or user.is_superuser %}
                 <li><a href="{% url 'manage_users' %}" class="nav-link"><i class="bi bi-people"></i> Gestion membres</a></li>
-                {% endif %}
             </ul>
         </div>
     </nav>
