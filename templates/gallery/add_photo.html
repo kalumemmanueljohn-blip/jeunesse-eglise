@@ -1,0 +1,685 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}📷 Ajouter une photo - CITE BETHEL BANDAL MOULEART{% endblock %}
+
+{% block content %}
+<div class="add-photo-page">
+    <!-- En-tête avec animation -->
+    <div class="page-header">
+        <a href="{% url 'gallery' %}" class="back-link">
+            <i class="bi bi-arrow-left"></i> Retour à la galerie
+        </a>
+        <div class="header-icon">
+            <i class="bi bi-camera-fill"></i>
+        </div>
+        <h1>📷 Ajouter une photo</h1>
+        <p>Partagez les moments forts de la communauté</p>
+        <div class="header-decoration">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <form method="post" enctype="multipart/form-data" id="photoForm">
+            {% csrf_token %}
+            
+            <!-- Titre -->
+            <div class="form-group">
+                <label><i class="bi bi-tag"></i> {{ form.title.label }} <span class="required">*</span></label>
+                {{ form.title }}
+                <small>Un titre clair pour identifier la photo</small>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label><i class="bi bi-text-paragraph"></i> {{ form.description.label }}</label>
+                {{ form.description }}
+                <small>Optionnel - Décrivez le moment capturé</small>
+            </div>
+
+            <!-- Image -->
+            <div class="form-group">
+                <label><i class="bi bi-image"></i> {{ form.image.label }} <span class="required">*</span></label>
+                <div class="image-upload-area">
+                    <input type="file" name="image" id="imageInput" class="image-input" accept="image/jpeg,image/png,image/gif,image/webp">
+                    <label for="imageInput" class="image-upload-label">
+                        <i class="bi bi-cloud-upload"></i>
+                        <span>Cliquez pour sélectionner une image</span>
+                    </label>
+                    <div class="image-preview" id="imagePreview" style="display: none;">
+                        <img id="previewImg" src="#" alt="Aperçu">
+                        <button type="button" class="remove-image" onclick="removeImage()">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    <div id="imageFileInfo" class="file-info" style="display: none;">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span id="imageFileName"></span>
+                        <span id="imageFileSize"></span>
+                    </div>
+                </div>
+                <small><i class="bi bi-info-circle"></i> Formats acceptés: JPG, PNG, GIF, WEBP. Taille max: 5MB</small>
+            </div>
+
+            <!-- Catégorie et Date -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label><i class="bi bi-folder"></i> {{ form.category.label }}</label>
+                    {{ form.category }}
+                    <small>Classez votre photo par catégorie</small>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="bi bi-calendar3"></i> {{ form.taken_at.label }}</label>
+                    {{ form.taken_at }}
+                    <small>Date de l'événement (optionnel)</small>
+                </div>
+            </div>
+
+            <!-- Mise en avant -->
+            <div class="form-check">
+                {{ form.is_featured }}
+                <label class="form-check-label" for="{{ form.is_featured.id_for_label }}">
+                    <i class="bi bi-star-fill"></i> {{ form.is_featured.label }}
+                </label>
+            </div>
+
+            <!-- Indicateur de chargement -->
+            <div class="loading-indicator" id="loadingIndicator" style="display: none;">
+                <div class="spinner"></div>
+                <span>Téléchargement en cours...</span>
+            </div>
+
+            <!-- Boutons -->
+            <div class="form-actions">
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="bi bi-cloud-upload"></i> Publier la photo
+                </button>
+                <a href="{% url 'gallery' %}" class="btn-cancel">
+                    <i class="bi bi-x-circle"></i> Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Conseils -->
+    <div class="tips-card">
+        <h3><i class="bi bi-lightbulb"></i> Conseils pour vos photos</h3>
+        <div class="tips-grid">
+            <div class="tip">
+                <div class="tip-icon">📸</div>
+                <div>
+                    <strong>Qualité d'image</strong>
+                    <span>Privilégiez les photos nettes et bien éclairées</span>
+                </div>
+            </div>
+            <div class="tip">
+                <div class="tip-icon">📝</div>
+                <div>
+                    <strong>Description</strong>
+                    <span>Ajoutez une description pour contextualiser</span>
+                </div>
+            </div>
+            <div class="tip">
+                <div class="tip-icon">🏷️</div>
+                <div>
+                    <strong>Catégorie</strong>
+                    <span>Classez vos photos pour faciliter la recherche</span>
+                </div>
+            </div>
+            <div class="tip">
+                <div class="tip-icon">⚡</div>
+                <div>
+                    <strong>Taille d'image</strong>
+                    <span>Compressez vos images pour un chargement plus rapide</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.add-photo-page {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    animation: fadeInPage 0.5s ease;
+}
+
+@keyframes fadeInPage {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* En-tête */
+.page-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    position: relative;
+}
+
+.back-link {
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: #3498db;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.back-link:hover {
+    transform: translateX(-5px);
+    color: #2980b9;
+}
+
+.header-icon {
+    font-size: 3rem;
+    color: #27ae60;
+    margin-bottom: 0.5rem;
+    animation: bounceIcon 2s infinite;
+}
+
+@keyframes bounceIcon {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    background: linear-gradient(135deg, #2c3e50, #27ae60);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.page-header p {
+    color: #7f8c8d;
+}
+
+.header-decoration {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.header-decoration span {
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #27ae60, #f39c12);
+    border-radius: 3px;
+    animation: expandLine 0.8s ease-out;
+}
+
+@keyframes expandLine {
+    from { width: 0; opacity: 0; }
+    to { width: 40px; opacity: 1; }
+}
+
+/* Formulaire */
+.form-card {
+    background: white;
+    border-radius: 25px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+    transition: transform 0.3s;
+}
+
+.form-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 50px rgba(0,0,0,0.12);
+}
+
+.form-group {
+    margin-bottom: 1.8rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.6rem;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.form-group label i {
+    color: #27ae60;
+    margin-right: 5px;
+}
+
+.required {
+    color: #e74c3c;
+    margin-left: 3px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    background: white;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #27ae60;
+    box-shadow: 0 0 0 3px rgba(39,174,96,0.1);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+small {
+    display: block;
+    margin-top: 0.5rem;
+    color: #7f8c8d;
+    font-size: 0.75rem;
+}
+
+small i {
+    margin-right: 3px;
+}
+
+/* Image upload */
+.image-upload-area {
+    position: relative;
+}
+
+.image-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.image-upload-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #f8f9fa;
+    border: 2px dashed #cbd5e0;
+    padding: 1.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+}
+
+.image-upload-label:hover {
+    background: #edf2f7;
+    border-color: #27ae60;
+    transform: translateY(-2px);
+}
+
+.image-upload-label i {
+    font-size: 2rem;
+    color: #27ae60;
+}
+
+.image-preview {
+    margin-top: 15px;
+    position: relative;
+    display: inline-block;
+}
+
+.image-preview img {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 2px solid #e0e0e0;
+}
+
+.remove-image {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.remove-image:hover {
+    background: #c0392b;
+    transform: scale(1.1);
+}
+
+.file-info {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #e8f8f0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #27ae60;
+}
+
+.file-info i {
+    font-size: 1rem;
+}
+
+/* Form row */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+/* Checkbox */
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    padding: 0.8rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.form-check-input {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #f39c12;
+}
+
+.form-check-label {
+    cursor: pointer;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.form-check-label i {
+    color: #f39c12;
+    margin-right: 5px;
+}
+
+/* Loading indicator */
+.loading-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin: 20px 0;
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e0e0e0;
+    border-top-color: #27ae60;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Boutons */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.btn-submit {
+    flex: 2;
+    background: linear-gradient(135deg, #27ae60, #219653);
+    color: white;
+    padding: 1rem;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(39,174,96,0.4);
+    gap: 12px;
+}
+
+.btn-cancel {
+    flex: 1;
+    background: #95a5a6;
+    color: white;
+    padding: 1rem;
+    border: none;
+    border-radius: 50px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-cancel:hover {
+    background: #7f8c8d;
+    transform: translateY(-3px);
+    gap: 12px;
+}
+
+/* Tips card */
+.tips-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 25px;
+    padding: 2rem;
+    color: white;
+    transition: transform 0.3s;
+}
+
+.tips-card:hover {
+    transform: translateY(-3px);
+}
+
+.tips-card h3 {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.3rem;
+}
+
+.tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.tip {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem;
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    transition: all 0.3s;
+}
+
+.tip:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateX(5px);
+}
+
+.tip-icon {
+    font-size: 1.5rem;
+}
+
+.tip div {
+    flex: 1;
+}
+
+.tip strong {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+}
+
+.tip span {
+    font-size: 0.7rem;
+    opacity: 0.9;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .add-photo-page {
+        padding: 0 1rem;
+        margin: 1rem auto;
+    }
+    
+    .form-card {
+        padding: 1.5rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .back-link {
+        position: static;
+        display: inline-flex;
+        margin-bottom: 1rem;
+        justify-content: center;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .tips-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-card {
+        padding: 1rem;
+    }
+    
+    .image-upload-label {
+        flex-direction: column;
+    }
+    
+    .tip {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
+
+<script>
+// Image upload preview
+const imageInput = document.getElementById('imageInput');
+const imagePreview = document.getElementById('imagePreview');
+const previewImg = document.getElementById('previewImg');
+const imageFileInfo = document.getElementById('imageFileInfo');
+const imageFileName = document.getElementById('imageFileName');
+const imageFileSize = document.getElementById('imageFileSize');
+
+if (imageInput) {
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Vérifier la taille
+            if (file.size > 5 * 1024 * 1024) {
+                alert('⚠️ L\'image est trop volumineuse. Taille maximale: 5MB');
+                this.value = '';
+                return;
+            }
+            
+            // Vérifier le type
+            if (!file.type.startsWith('image/')) {
+                alert('⚠️ Veuillez sélectionner une image valide');
+                this.value = '';
+                return;
+            }
+            
+            // Afficher les infos
+            imageFileName.textContent = file.name;
+            imageFileSize.textContent = `(${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            imageFileInfo.style.display = 'flex';
+            
+            // Aperçu
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                previewImg.src = event.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+function removeImage() {
+    imageInput.value = '';
+    imagePreview.style.display = 'none';
+    imageFileInfo.style.display = 'none';
+    previewImg.src = '#';
+}
+
+// Animation du bouton de soumission
+const submitBtn = document.getElementById('submitBtn');
+const loadingIndicator = document.getElementById('loadingIndicator');
+const photoForm = document.getElementById('photoForm');
+
+if (submitBtn) {
+    submitBtn.addEventListener('click', function(e) {
+        const hasImage = imageInput && imageInput.files.length;
+        
+        if (!hasImage) {
+            e.preventDefault();
+            alert('⚠️ Veuillez sélectionner une image à télécharger.');
+            return;
+        }
+        
+        loadingIndicator.style.display = 'flex';
+        this.disabled = true;
+        this.innerHTML = '<i class="bi bi-hourglass-split"></i> Publication en cours...';
+    });
+}
+</script>
+{% endblock %}

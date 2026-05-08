@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Supprimer mon compte - CITE BETHEL BANDAL MOULEART{% endblock %}
+
+{% block content %}
+<div class="delete-account-page">
+    <div class="delete-card">
+        <div class="delete-header">
+            <div class="delete-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <h1>Supprimer mon compte</h1>
+            <p>Cette action est irréversible</p>
+        </div>
+
+        <div class="warning-box">
+            <i class="bi bi-shield-exclamation"></i>
+            <div>
+                <strong>⚠️ Attention !</strong>
+                <p>La suppression de votre compte entraînera :</p>
+                <ul>
+                    <li><i class="bi bi-x-circle"></i> La perte de toutes vos données personnelles</li>
+                    <li><i class="bi bi-chat-dots"></i> La suppression de votre historique de messages</li>
+                    <li><i class="bi bi-calendar"></i> La perte de vos inscriptions aux événements</li>
+                    <li><i class="bi bi-heart"></i> La suppression de votre historique de dons</li>
+                    <li><i class="bi bi-person"></i> La suppression de votre compte utilisateur</li>
+                </ul>
+            </div>
+        </div>
+
+        <form method="post" class="delete-form" onsubmit="return confirm('⚠️ Êtes-vous absolument sûr de vouloir supprimer votre compte ? Cette action est irréversible.')">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label><i class="bi bi-lock-fill"></i> Mot de passe</label>
+                <input type="password" name="password" class="form-control" required placeholder="Entrez votre mot de passe">
+                <small>Nous avons besoin de votre mot de passe pour confirmer votre identité</small>
+            </div>
+
+            <div class="form-group">
+                <label><i class="bi bi-exclamation-diamond-fill"></i> Confirmation</label>
+                <input type="text" name="confirmation" class="form-control" required placeholder="Tapez 'SUPPRIMER' pour confirmer">
+                <small>Pour confirmer la suppression, tapez exactement <strong>"SUPPRIMER"</strong> (en majuscules)</small>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-delete">
+                    <i class="bi bi-trash-fill"></i> Supprimer définitivement
+                </button>
+                <a href="{% url 'dashboard' %}" class="btn-cancel">
+                    <i class="bi bi-arrow-left"></i> Annuler
+                </a>
+            </div>
+        </form>
+
+        <div class="help-text">
+            <i class="bi bi-question-circle"></i>
+            <p>Besoin d'aide ? <a href="{% url 'contact' %}">Contactez-nous</a> avant de supprimer votre compte.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.delete-account-page {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #fef3f2, #fee2e2);
+}
+
+.delete-card {
+    max-width: 550px;
+    width: 100%;
+    background: white;
+    border-radius: 30px;
+    padding: 40px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.delete-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.delete-icon {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.delete-icon i {
+    font-size: 2rem;
+    color: white;
+}
+
+.delete-header h1 {
+    font-size: 1.8rem;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.delete-header p {
+    color: #e74c3c;
+    font-weight: 500;
+}
+
+.warning-box {
+    background: #fef3f2;
+    border-left: 4px solid #e74c3c;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+    display: flex;
+    gap: 15px;
+}
+
+.warning-box i {
+    font-size: 2rem;
+    color: #e74c3c;
+}
+
+.warning-box strong {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.warning-box p {
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+}
+
+.warning-box ul {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+}
+
+.warning-box li {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #2c3e50;
+}
+
+.form-group label i {
+    margin-right: 6px;
+    color: #e74c3c;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 3px rgba(231,76,60,0.1);
+}
+
+small {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.7rem;
+    color: #7f8c8d;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 30px;
+}
+
+.btn-delete {
+    flex: 2;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-delete:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(231,76,60,0.4);
+}
+
+.btn-cancel {
+    flex: 1;
+    background: #95a5a6;
+    color: white;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 12px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-cancel:hover {
+    background: #7f8c8d;
+    transform: translateY(-2px);
+}
+
+.help-text {
+    text-align: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #7f8c8d;
+}
+
+.help-text a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.help-text a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .delete-card {
+        padding: 25px;
+    }
+    
+    .delete-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .warning-box {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .warning-box ul li {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .delete-card {
+        padding: 20px;
+    }
+}
+</style>
+{% endblock %}

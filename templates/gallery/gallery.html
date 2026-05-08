@@ -1,0 +1,829 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}📸 Galerie - CITE BETHEL BANDAL MOULEART{% endblock %}
+
+{% block content %}
+<div class="gallery-page">
+    <!-- En-tête avec animation -->
+    <div class="page-header">
+        <div class="header-badge">
+            <i class="bi bi-images"></i>
+            <span>Nos souvenirs</span>
+        </div>
+        <h1>📸 Galerie</h1>
+        <p>Découvrez nos moments forts en images et vidéos</p>
+        
+        {% if user.is_staff or user.is_superuser %}
+            <div class="admin-buttons">
+                <a href="{% url 'add_photo' %}" class="btn-add-photo">
+                    <i class="bi bi-plus-circle"></i> Ajouter une photo
+                </a>
+                <a href="{% url 'add_video' %}" class="btn-add-video">
+                    <i class="bi bi-plus-circle"></i> Ajouter une vidéo
+                </a>
+            </div>
+        {% endif %}
+        
+        <div class="header-decoration">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Section Vidéos -->
+    {% if videos %}
+    <section class="videos-section">
+        <div class="section-header">
+            <i class="bi bi-camera-reels-fill"></i>
+            <h2>Vidéos</h2>
+            <span class="section-count">{{ videos|length }} vidéo(s)</span>
+        </div>
+        <div class="videos-grid">
+            {% for video in videos %}
+                <div class="video-card" data-video-id="{{ video.id }}">
+                    <div class="video-thumbnail">
+                        {% if video.thumbnail %}
+                            <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" class="thumbnail-img">
+                        {% else %}
+                            <div class="video-placeholder">
+                                <i class="bi bi-camera-reels"></i>
+                            </div>
+                        {% endif %}
+                        <div class="play-overlay">
+                            <i class="bi bi-play-circle-fill"></i>
+                        </div>
+                        
+                        {% if video.video_file %}
+                            <video class="video-player" controls preload="none">
+                                <source src="{{ video.video_file.url }}" type="video/mp4">
+                            </video>
+                        {% endif %}
+                        
+                        {% if video.video_url %}
+                            <div class="video-embed">
+                                <iframe src="{{ video.video_url }}" frameborder="0" allowfullscreen></iframe>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="video-info">
+                        <h3>{{ video.title }}</h3>
+                        <p>{{ video.description|truncatewords:15 }}</p>
+                        <div class="video-meta">
+                            <span><i class="bi bi-calendar3"></i> {{ video.uploaded_at|date:"d/m/Y" }}</span>
+                        </div>
+                        {% if user.is_staff or user.is_superuser %}
+                            <div class="admin-actions">
+                                <a href="{% url 'delete_video' video.id %}" 
+                                   class="btn-delete" 
+                                   onclick="return confirm('⚠️ Supprimer la vidéo "{{ video.title }}" ?')">
+                                    <i class="bi bi-trash"></i> Supprimer
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Section Photos -->
+    {% if images %}
+    <section class="photos-section">
+        <div class="section-header">
+            <i class="bi bi-images"></i>
+            <h2>Photos</h2>
+            <span class="section-count">{{ images|length }} photo(s)</span>
+        </div>
+        <div class="photos-grid">
+            {% for image in images %}
+                <div class="photo-card" data-photo-id="{{ image.id }}" onclick="openLightbox('{{ image.image.url }}', '{{ image.title }}')">
+                    <img src="{{ image.image.url }}" alt="{{ image.title }}" loading="lazy">
+                    <div class="photo-overlay">
+                        <i class="bi bi-search"></i>
+                        <span>{{ image.title }}</span>
+                    </div>
+                    {% if user.is_staff or user.is_superuser %}
+                        <div class="photo-admin-actions">
+                            <a href="{% url 'delete_photo' image.id %}" 
+                               class="btn-delete-photo" 
+                               onclick="event.stopPropagation(); return confirm('⚠️ Supprimer la photo "{{ image.title }}" ?')">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Message vide -->
+    {% if not images and not videos %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-camera"></i>
+            </div>
+            <h3>Aucune photo ou vidéo pour le moment</h3>
+            <p>Soyez le premier à partager vos souvenirs !</p>
+            {% if user.is_staff or user.is_superuser %}
+                <div class="empty-buttons">
+                    <a href="{% url 'add_photo' %}" class="btn-add-photo">📷 Ajouter une photo</a>
+                    <a href="{% url 'add_video' %}" class="btn-add-video">🎥 Ajouter une vidéo</a>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Lightbox pour les photos -->
+<div id="lightbox" class="lightbox" style="display: none;">
+    <span class="close-lightbox" onclick="closeLightbox()">&times;</span>
+    <img class="lightbox-image" id="lightboxImage">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+    <div class="lightbox-counter" id="lightboxCounter"></div>
+    <button class="lightbox-prev" onclick="prevImage()">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    <button class="lightbox-next" onclick="nextImage()">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+</div>
+
+<style>
+.gallery-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    animation: fadeInPage 0.5s ease;
+}
+
+@keyframes fadeInPage {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* En-tête */
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #e8f4fd, #d6eaf8);
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    color: #3498db;
+    margin-bottom: 15px;
+    animation: fadeInDown 0.6s ease;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.page-header p {
+    color: #7f8c8d;
+    animation: fadeInUp 0.6s ease 0.1s both;
+}
+
+.header-decoration {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.header-decoration span {
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #3498db, #f39c12);
+    border-radius: 3px;
+    animation: expandLine 0.8s ease-out;
+}
+
+@keyframes expandLine {
+    from { width: 0; opacity: 0; }
+    to { width: 40px; opacity: 1; }
+}
+
+/* Boutons admin */
+.admin-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    animation: fadeInUp 0.6s ease 0.2s both;
+}
+
+.btn-add-photo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #27ae60, #219653);
+    color: white;
+    border-radius: 40px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-add-photo:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(39,174,96,0.3);
+}
+
+.btn-add-video {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border-radius: 40px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-add-video:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(231,76,60,0.3);
+}
+
+/* Section header */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 25px;
+    border-left: 4px solid #f39c12;
+    padding-left: 15px;
+}
+
+.section-header i {
+    font-size: 1.8rem;
+    color: #3498db;
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.section-count {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    background: #f8f9fa;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+/* Sections */
+.videos-section, .photos-section {
+    margin-bottom: 50px;
+}
+
+/* Grille vidéos */
+.videos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.video-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.video-thumbnail {
+    position: relative;
+    background: #1a2a3a;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.thumbnail-img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    transition: transform 0.5s;
+}
+
+.video-card:hover .thumbnail-img {
+    transform: scale(1.05);
+}
+
+.video-placeholder {
+    width: 100%;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    font-size: 3rem;
+    color: white;
+}
+
+.play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s;
+}
+
+.video-card:hover .play-overlay {
+    opacity: 1;
+}
+
+.play-overlay i {
+    font-size: 2rem;
+    color: white;
+}
+
+.video-player {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    background: black;
+}
+
+.video-embed {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+}
+
+.video-embed iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.video-info {
+    padding: 15px;
+}
+
+.video-info h3 {
+    font-size: 1rem;
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.video-info p {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.video-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 0.7rem;
+    color: #95a5a6;
+    margin-bottom: 10px;
+}
+
+.video-meta i {
+    margin-right: 3px;
+}
+
+/* Grille photos */
+.photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.photo-card {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+    border-radius: 15px;
+    cursor: pointer;
+}
+
+.photo-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+}
+
+.photo-card:hover img {
+    transform: scale(1.08);
+}
+
+.photo-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(0,0,0,0.5), rgba(0,0,0,0.7));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.photo-card:hover .photo-overlay {
+    opacity: 1;
+}
+
+.photo-overlay i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    transform: translateY(10px);
+    transition: transform 0.3s;
+}
+
+.photo-overlay span {
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 0 10px;
+    transform: translateY(10px);
+    transition: transform 0.3s;
+}
+
+.photo-card:hover .photo-overlay i,
+.photo-card:hover .photo-overlay span {
+    transform: translateY(0);
+}
+
+/* Boutons admin */
+.admin-actions {
+    margin-top: 10px;
+    text-align: right;
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 0.7rem;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-delete:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+.photo-admin-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.photo-card:hover .photo-admin-actions {
+    opacity: 1;
+}
+
+.btn-delete-photo {
+    background: #e74c3c;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.3s;
+    font-size: 0.8rem;
+}
+
+.btn-delete-photo:hover {
+    background: #c0392b;
+    transform: scale(1.1);
+}
+
+/* Lightbox */
+.lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.96);
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.lightbox-image {
+    max-width: 90%;
+    max-height: 80%;
+    border-radius: 10px;
+    animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.lightbox-caption {
+    color: white;
+    margin-top: 15px;
+    font-size: 1rem;
+}
+
+.lightbox-counter {
+    color: rgba(255,255,255,0.7);
+    margin-top: 8px;
+    font-size: 0.8rem;
+}
+
+.close-lightbox {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: white;
+    font-size: 40px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.close-lightbox:hover {
+    transform: scale(1.1);
+}
+
+.lightbox-prev, .lightbox-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox-prev {
+    left: 20px;
+}
+
+.lightbox-next {
+    right: 20px;
+}
+
+.lightbox-prev:hover, .lightbox-next:hover {
+    background: rgba(255,255,255,0.4);
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* État vide */
+.empty-state {
+    text-align: center;
+    padding: 60px;
+    background: white;
+    border-radius: 25px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #bdc3c7;
+    margin-bottom: 1rem;
+    animation: pulseIcon 2s infinite;
+}
+
+@keyframes pulseIcon {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.05); opacity: 0.3; }
+}
+
+.empty-state h3 {
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.empty-state p {
+    color: #7f8c8d;
+    margin-bottom: 20px;
+}
+
+.empty-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .gallery-page {
+        padding: 15px;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .videos-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .photos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+    
+    .admin-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .empty-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .lightbox-prev, .lightbox-next {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .lightbox-prev {
+        left: 10px;
+    }
+    
+    .lightbox-next {
+        right: 10px;
+    }
+    
+    .header-decoration span {
+        width: 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .photos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .photo-card {
+        height: 150px;
+    }
+    
+    .section-header {
+        flex-wrap: wrap;
+    }
+    
+    .section-count {
+        margin-left: 0;
+    }
+}
+</style>
+
+<script>
+// Lightbox
+let currentImages = [];
+let currentIndex = 0;
+let lightboxImages = [];
+
+function openLightbox(imageUrl, caption) {
+    const allImages = document.querySelectorAll('.photo-card img');
+    lightboxImages = Array.from(allImages).map(img => ({
+        url: img.src,
+        title: img.alt || 'Photo'
+    }));
+    
+    currentIndex = lightboxImages.findIndex(img => img.url === imageUrl);
+    
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImage = document.getElementById('lightboxImage');
+    const lightboxCaption = document.getElementById('lightboxCaption');
+    const lightboxCounter = document.getElementById('lightboxCounter');
+    
+    lightboxImage.src = imageUrl;
+    lightboxCaption.textContent = caption || 'Photo';
+    lightboxCounter.textContent = `${currentIndex + 1} / ${lightboxImages.length}`;
+    lightbox.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function prevImage() {
+    currentIndex = (currentIndex - 1 + lightboxImages.length) % lightboxImages.length;
+    const img = lightboxImages[currentIndex];
+    document.getElementById('lightboxImage').src = img.url;
+    document.getElementById('lightboxCaption').textContent = img.title;
+    document.getElementById('lightboxCounter').textContent = `${currentIndex + 1} / ${lightboxImages.length}`;
+}
+
+function nextImage() {
+    currentIndex = (currentIndex + 1) % lightboxImages.length;
+    const img = lightboxImages[currentIndex];
+    document.getElementById('lightboxImage').src = img.url;
+    document.getElementById('lightboxCaption').textContent = img.title;
+    document.getElementById('lightboxCounter').textContent = `${currentIndex + 1} / ${lightboxImages.length}`;
+}
+
+// Fermer avec Echap
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeLightbox();
+    } else if (e.key === 'ArrowLeft') {
+        if (document.getElementById('lightbox').style.display === 'flex') {
+            prevImage();
+        }
+    } else if (e.key === 'ArrowRight') {
+        if (document.getElementById('lightbox').style.display === 'flex') {
+            nextImage();
+        }
+    }
+});
+
+// Animation des cartes au chargement
+document.addEventListener('DOMContentLoaded', () => {
+    const cards = document.querySelectorAll('.video-card, .photo-card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.05}s`;
+    });
+});
+
+// Lazy loading des images
+const images = document.querySelectorAll('.photo-card img');
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src || img.src;
+            observer.unobserve(img);
+        }
+    });
+});
+
+images.forEach(img => observer.observe(img));
+</script>
+{% endblock %}

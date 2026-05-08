@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Modifier mon profil - CITE BETHEL BANDAL MOULEART{% endblock %}
+
+{% block content %}
+<div class="profile-edit-page">
+    <div class="page-header">
+        <a href="{% url 'dashboard' %}" class="back-link">
+            <i class="bi bi-arrow-left"></i> Retour au tableau de bord
+        </a>
+        <h1><i class="bi bi-pencil-square"></i> Modifier mon profil</h1>
+        <p>Mettez à jour vos informations personnelles</p>
+    </div>
+
+    <div class="profile-edit-container">
+        <form method="post" enctype="multipart/form-data" class="profile-form">
+            {% csrf_token %}
+            
+            <!-- Section Avatar -->
+            <div class="avatar-section">
+                {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" alt="Avatar" class="current-avatar">
+                {% else %}
+                    <div class="avatar-placeholder">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                {% endif %}
+                <label for="avatar" class="btn-avatar">
+                    <i class="bi bi-camera"></i> Changer ma photo
+                </label>
+                <input type="file" name="avatar" id="avatar" accept="image/*" style="display: none;">
+                <small class="help-text">Formats acceptés: JPG, PNG, GIF. Taille max: 2MB</small>
+            </div>
+
+            <!-- Informations personnelles -->
+            <div class="form-divider">
+                <span>Informations personnelles</span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label><i class="bi bi-person"></i> Prénom</label>
+                    <input type="text" name="first_name" value="{{ request.user.first_name }}" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="bi bi-person"></i> Nom</label>
+                    <input type="text" name="last_name" value="{{ request.user.last_name }}" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label><i class="bi bi-envelope"></i> Email</label>
+                <input type="email" name="email" value="{{ request.user.email }}" class="form-control" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label><i class="bi bi-phone"></i> Téléphone</label>
+                    <input type="tel" name="phone_number" value="{{ profile.phone_number }}" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="bi bi-calendar"></i> Date de naissance</label>
+                    <input type="date" name="birth_date" value="{{ profile.birth_date|date:'Y-m-d' }}" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label><i class="bi bi-geo-alt"></i> Adresse</label>
+                <input type="text" name="address" value="{{ profile.address }}" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label><i class="bi bi-building"></i> Église d'origine</label>
+                <input type="text" name="church" value="{{ profile.church }}" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label><i class="bi bi-chat"></i> Bio</label>
+                <textarea name="bio" rows="4" class="form-control">{{ profile.bio }}</textarea>
+            </div>
+
+            <!-- Statut dans la communauté -->
+            <div class="form-divider">
+                <span>Statut dans la communauté</span>
+            </div>
+
+            <div class="form-group">
+                <label><i class="bi bi-person-badge"></i> Je suis</label>
+                <select name="member_type" id="memberTypeSelect" class="form-control">
+                    <option value="staff" {% if profile.member_type == 'staff' %}selected{% endif %}>👑 Staff</option>
+                    <option value="regular" {% if profile.member_type == 'regular' %}selected{% endif %}>🙏 Membre régulier</option>
+                    <option value="guest" {% if profile.member_type == 'guest' %}selected{% endif %}>👤 Invité</option>
+                </select>
+            </div>
+
+            <div class="form-group department-group" id="departmentGroup" style="{% if profile.member_type != 'staff' %}display: none;{% endif %}">
+                <label><i class="bi bi-diagram-3"></i> Département</label>
+                <select name="department" class="form-control">
+                    <option value="">-- Sélectionnez votre département --</option>
+                    <option value="coordination" {% if profile.department == 'coordination' %}selected{% endif %}>🎯 Coordination</option>
+                    <option value="evangelisation" {% if profile.department == 'evangelisation' %}selected{% endif %}>📢 Évangélisation</option>
+                    <option value="louange" {% if profile.department == 'louange' %}selected{% endif %}>🎵 Louange</option>
+                    <option value="enseignement" {% if profile.department == 'enseignement' %}selected{% endif %}>📖 Enseignement</option>
+                    <option value="technique" {% if profile.department == 'technique' %}selected{% endif %}>💻 Technique / Médias</option>
+                    <option value="communication" {% if profile.department == 'communication' %}selected{% endif %}>📱 Communication</option>
+                    <option value="accueil" {% if profile.department == 'accueil' %}selected{% endif %}>🤝 Accueil</option>
+                    <option value="priere" {% if profile.department == 'priere' %}selected{% endif %}>🙏 Prière</option>
+                    <option value="social" {% if profile.department == 'social' %}selected{% endif %}>❤️ Action sociale</option>
+                </select>
+                <small class="help-text">Sélectionnez votre département au sein du staff</small>
+            </div>
+
+            <div class="form-group regular-group" id="regularGroup" style="{% if profile.member_type != 'regular' %}display: none;{% endif %}">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="is_regular_member" id="isRegularMember" {% if profile.is_regular_member %}checked{% endif %}>
+                    <span class="checkmark"></span>
+                    <span>Je prie déjà dans cette église</span>
+                </label>
+            </div>
+
+            <!-- Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn-save">
+                    <i class="bi bi-save"></i> Enregistrer les modifications
+                </button>
+                <a href="{% url 'dashboard' %}" class="btn-cancel">
+                    <i class="bi bi-arrow-left"></i> Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.profile-edit-page {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 20px;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.back-link {
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: #3498db;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.back-link:hover {
+    transform: translateX(-5px);
+    color: #2980b9;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.page-header p {
+    color: #7f8c8d;
+}
+
+.profile-edit-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+}
+
+.profile-edit-container:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 50px rgba(0,0,0,0.12);
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Avatar section */
+.avatar-section {
+    text-align: center;
+    padding: 1rem;
+    border-bottom: 1px solid #ecf0f1;
+    margin-bottom: 0.5rem;
+}
+
+.current-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 1rem;
+    border: 3px solid #3498db;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.avatar-placeholder i {
+    font-size: 120px;
+    color: #bdc3c7;
+    margin-bottom: 1rem;
+}
+
+.btn-avatar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8f9fa;
+    color: #2c3e50;
+    padding: 8px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.85rem;
+}
+
+.btn-avatar:hover {
+    background: #3498db;
+    color: white;
+}
+
+.help-text {
+    display: block;
+    font-size: 0.7rem;
+    color: #7f8c8d;
+    margin-top: 8px;
+}
+
+/* Form */
+.form-divider {
+    text-align: center;
+    margin: 10px 0 5px;
+    position: relative;
+}
+
+.form-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e0e0e0;
+    z-index: 1;
+}
+
+.form-divider span {
+    background: white;
+    padding: 0 15px;
+    position: relative;
+    z-index: 2;
+    color: #7f8c8d;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.85rem;
+}
+
+.form-group label i {
+    margin-right: 5px;
+    color: #3498db;
+}
+
+.form-control {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+}
+
+select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Checkbox */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #2c3e50;
+}
+
+.checkbox-label input {
+    display: none;
+}
+
+.checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #3498db;
+    border-radius: 4px;
+    display: inline-block;
+    position: relative;
+}
+
+.checkbox-label input:checked + .checkmark {
+    background: #3498db;
+}
+
+.checkbox-label input:checked + .checkmark::after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 11px;
+}
+
+/* Boutons */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ecf0f1;
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #27ae60, #229954);
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 40px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(39,174,96,0.3);
+}
+
+.btn-cancel {
+    background: #95a5a6;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 40px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-cancel:hover {
+    background: #7f8c8d;
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .profile-edit-page {
+        margin: 1rem auto;
+        padding: 0 15px;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .back-link {
+        position: static;
+        display: inline-flex;
+        margin-bottom: 1rem;
+    }
+    
+    .profile-edit-container {
+        padding: 1.5rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-save, .btn-cancel {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-edit-container {
+        padding: 1rem;
+    }
+    
+    .current-avatar {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .avatar-placeholder i {
+        font-size: 100px;
+    }
+}
+</style>
+
+<script>
+// Gestion de l'affichage des champs selon le type de membre
+const memberTypeSelect = document.getElementById('memberTypeSelect');
+const departmentGroup = document.getElementById('departmentGroup');
+const regularGroup = document.getElementById('regularGroup');
+
+function toggleFields() {
+    const selectedType = memberTypeSelect ? memberTypeSelect.value : 'guest';
+    
+    if (selectedType === 'staff') {
+        departmentGroup.style.display = 'block';
+        regularGroup.style.display = 'none';
+    } else if (selectedType === 'regular') {
+        departmentGroup.style.display = 'none';
+        regularGroup.style.display = 'block';
+    } else {
+        departmentGroup.style.display = 'none';
+        regularGroup.style.display = 'none';
+    }
+}
+
+if (memberTypeSelect) {
+    memberTypeSelect.addEventListener('change', toggleFields);
+    toggleFields();
+}
+
+// Aperçu de l'avatar avant upload
+const avatarInput = document.getElementById('avatar');
+const currentAvatar = document.querySelector('.current-avatar');
+const avatarPlaceholder = document.querySelector('.avatar-placeholder');
+
+if (avatarInput) {
+    avatarInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                alert('⚠️ L\'image est trop volumineuse. Taille maximale: 2MB');
+                this.value = '';
+                return;
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                alert('⚠️ Veuillez sélectionner une image valide');
+                this.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                if (currentAvatar) {
+                    currentAvatar.src = event.target.result;
+                } else if (avatarPlaceholder) {
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.className = 'current-avatar';
+                    img.alt = 'Avatar';
+                    avatarPlaceholder.parentNode.insertBefore(img, avatarPlaceholder);
+                    avatarPlaceholder.style.display = 'none';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+</script>
+{% endblock %}

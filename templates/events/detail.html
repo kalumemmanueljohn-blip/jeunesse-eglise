@@ -1,0 +1,843 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ event.title }} - CITE BETHEL BANDAL MOULEART{% endblock %}
+
+{% block content %}
+<div class="event-detail-container">
+    <!-- Section Hero avec image -->
+    <div class="event-hero">
+        {% if event.image %}
+            <div class="event-hero-image">
+                <img src="{{ event.image.url }}" alt="{{ event.title }}">
+                <div class="hero-overlay"></div>
+            </div>
+        {% else %}
+            <div class="event-hero-placeholder">
+                <div class="placeholder-content">
+                    <i class="bi bi-calendar-event"></i>
+                    <span>{{ event.title|slice:":2"|upper }}</span>
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Badge statut flottant -->
+        <div class="event-badge-floating status-{{ event.status }}">
+            {% if event.status == 'upcoming' %}
+                <i class="bi bi-clock"></i> À venir
+            {% elif event.status == 'ongoing' %}
+                <i class="bi bi-play-circle-fill"></i> En cours
+            {% elif event.status == 'past' %}
+                <i class="bi bi-check-circle-fill"></i> Passé
+            {% else %}
+                <i class="bi bi-x-circle-fill"></i> Annulé
+            {% endif %}
+        </div>
+        
+        <!-- Titre sur l'image -->
+        <div class="hero-title">
+            <h1>{{ event.title }}</h1>
+        </div>
+    </div>
+
+    <!-- Grille d'informations -->
+    <div class="event-info-grid">
+        <div class="info-card">
+            <div class="info-icon">
+                <i class="bi bi-calendar3"></i>
+            </div>
+            <div class="info-content">
+                <strong>Date</strong>
+                <p>{{ event.date|date:"l d F Y" }}</p>
+            </div>
+        </div>
+        <div class="info-card">
+            <div class="info-icon">
+                <i class="bi bi-clock"></i>
+            </div>
+            <div class="info-content">
+                <strong>Heure</strong>
+                <p>{{ event.date|date:"H:i" }}</p>
+            </div>
+        </div>
+        <div class="info-card">
+            <div class="info-icon">
+                <i class="bi bi-geo-alt"></i>
+            </div>
+            <div class="info-content">
+                <strong>Lieu</strong>
+                <p>{{ event.location }}</p>
+                {% if event.location_link %}
+                    <a href="{{ event.location_link }}" target="_blank" class="map-link">
+                        Voir sur Google Maps <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="info-card">
+            <div class="info-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="info-content">
+                <strong>Places disponibles</strong>
+                <p class="spots">
+                    {% if event.max_participants == 0 %}
+                        <i class="bi bi-infinity"></i> Illimité
+                    {% else %}
+                        <i class="bi bi-ticket-perforated"></i> {{ event.remaining_places }} / {{ event.max_participants }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Description -->
+    <div class="event-description-card">
+        <div class="section-title">
+            <i class="bi bi-text-paragraph"></i>
+            <h2>Description</h2>
+        </div>
+        <div class="description-content">
+            {{ event.description|linebreaks }}
+        </div>
+    </div>
+
+    <!-- Section inscription -->
+    <div class="event-registration-card">
+        <div class="section-title">
+            <i class="bi bi-person-plus"></i>
+            <h2>Inscription</h2>
+        </div>
+        
+        <div class="event-actions">
+            {% if user.is_authenticated %}
+                {% if is_registered %}
+                    <div class="alert alert-success">
+                        <div class="alert-icon">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <div class="alert-content">
+                            <strong>Vous êtes déjà inscrit !</strong>
+                            <p>Vous recevrez un rappel avant l'événement.</p>
+                        </div>
+                    </div>
+                {% else %}
+                    {% if event.is_full %}
+                        <div class="alert alert-warning">
+                            <div class="alert-icon">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </div>
+                            <div class="alert-content">
+                                <strong>Événement complet !</strong>
+                                <p>Désolé, toutes les places sont prises.</p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'register_event' event.id %}" class="btn-register">
+                            <i class="bi bi-check-lg"></i>
+                            S'inscrire à cet événement
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                        <p class="register-info">
+                            <i class="bi bi-info-circle"></i>
+                            Une confirmation vous sera envoyée par email.
+                        </p>
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <div class="alert-icon">
+                        <i class="bi bi-lock-fill"></i>
+                    </div>
+                    <div class="alert-content">
+                        <strong>Connectez-vous pour vous inscrire</strong>
+                        <p>Vous devez avoir un compte pour participer aux événements.</p>
+                        <a href="{% url 'login' %}?next={{ request.path }}" class="alert-link">
+                            Se connecter <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Participants -->
+    {% if event.participants_count > 0 %}
+    <div class="event-participants-card">
+        <div class="section-title">
+            <i class="bi bi-people-fill"></i>
+            <h2>Participants ({{ event.participants_count }})</h2>
+        </div>
+        <div class="participants-grid">
+            {% for participant in event.participants.all|slice:":16" %}
+                <div class="participant-card" title="{{ participant.user.get_full_name|default:participant.user.username }}">
+                    <div class="participant-avatar">
+                        {% if participant.user.profile.avatar %}
+                            <img src="{{ participant.user.profile.avatar.url }}" alt="{{ participant.user.username }}">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                {{ participant.user.username|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <span class="participant-name">{{ participant.user.get_full_name|default:participant.user.username|truncatechars:12 }}</span>
+                </div>
+            {% endfor %}
+            {% if event.participants_count > 16 %}
+                <div class="participant-more">
+                    +{{ event.participants_count|add:"-16" }} autres
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Partage social -->
+    <div class="event-share-card">
+        <div class="section-title">
+            <i class="bi bi-share"></i>
+            <h2>Partager</h2>
+        </div>
+        <div class="share-buttons">
+            <a href="https://wa.me/?text={{ event.title }} - {{ request.build_absolute_uri }}" target="_blank" class="share-btn whatsapp">
+                <i class="bi bi-whatsapp"></i> WhatsApp
+            </a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="share-btn facebook">
+                <i class="bi bi-facebook"></i> Facebook
+            </a>
+            <a href="mailto:?subject={{ event.title }}&body={{ request.build_absolute_uri }}" class="share-btn email">
+                <i class="bi bi-envelope"></i> Email
+            </a>
+            <a href="#" class="share-btn copy-link" onclick="copyLink(event)">
+                <i class="bi bi-link-45deg"></i> Copier le lien
+            </a>
+        </div>
+    </div>
+
+    <!-- Actions admin -->
+    {% if user.is_staff or user.is_superuser %}
+    <div class="admin-actions-card">
+        <div class="section-title">
+            <i class="bi bi-shield-lock"></i>
+            <h2>Administration</h2>
+        </div>
+        <div class="admin-buttons">
+            <a href="{% url 'admin:events_event_change' event.id %}" class="admin-btn edit">
+                <i class="bi bi-pencil-square"></i> Modifier
+            </a>
+            <a href="{% url 'delete_event' event.id %}" 
+               class="admin-btn delete" 
+               onclick="return confirm('⚠️ Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.')">
+                <i class="bi bi-trash"></i> Supprimer
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.event-detail-container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    background: white;
+    border-radius: 30px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hero section */
+.event-hero {
+    position: relative;
+    height: 350px;
+    overflow: hidden;
+}
+
+.event-hero-image {
+    width: 100%;
+    height: 100%;
+}
+
+.event-hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+}
+
+.event-hero:hover .event-hero-image img {
+    transform: scale(1.05);
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.6) 100%);
+}
+
+.event-hero-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.placeholder-content {
+    text-align: center;
+    color: white;
+}
+
+.placeholder-content i {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.placeholder-content span {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Badge flottant */
+.event-badge-floating {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    backdrop-filter: blur(10px);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-upcoming {
+    background: rgba(52,152,219,0.9);
+    color: white;
+}
+
+.status-ongoing {
+    background: rgba(231,76,60,0.9);
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+.status-past {
+    background: rgba(149,165,166,0.9);
+    color: white;
+}
+
+.status-cancelled {
+    background: rgba(44,62,80,0.9);
+    color: white;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.9; }
+    50% { opacity: 0.7; }
+}
+
+/* Titre sur l'image */
+.hero-title {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 30px;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    z-index: 2;
+}
+
+.hero-title h1 {
+    color: white;
+    font-size: 2rem;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Grille d'informations */
+.event-info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    padding: 2rem;
+    background: #f8f9fa;
+}
+
+.info-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 15px;
+    transition: all 0.3s;
+}
+
+.info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.info-icon i {
+    font-size: 1.8rem;
+    color: #3498db;
+}
+
+.info-content strong {
+    display: block;
+    font-size: 0.75rem;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.info-content p {
+    margin: 0;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.map-link {
+    font-size: 0.7rem;
+    color: #3498db;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 5px;
+}
+
+.map-link:hover {
+    text-decoration: underline;
+}
+
+.spots {
+    color: #27ae60 !important;
+}
+
+/* Cards génériques */
+.event-description-card,
+.event-registration-card,
+.event-participants-card,
+.event-share-card,
+.admin-actions-card {
+    padding: 2rem;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.event-description-card:last-child,
+.event-registration-card:last-child,
+.event-participants-card:last-child,
+.event-share-card:last-child,
+.admin-actions-card:last-child {
+    border-bottom: none;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.section-title i {
+    font-size: 1.5rem;
+    color: #3498db;
+}
+
+.section-title h2 {
+    font-size: 1.3rem;
+    color: #2c3e50;
+    margin: 0;
+}
+
+/* Description */
+.description-content {
+    line-height: 1.7;
+    color: #34495e;
+}
+
+.description-content p {
+    margin-bottom: 1rem;
+}
+
+/* Inscription */
+.btn-register {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    width: 100%;
+    background: linear-gradient(135deg, #27ae60, #219653);
+    color: white;
+    padding: 1.2rem;
+    border-radius: 15px;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-register:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(39,174,96,0.4);
+    gap: 1.2rem;
+}
+
+.register-info {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+}
+
+/* Alertes */
+.alert {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.2rem;
+    border-radius: 15px;
+}
+
+.alert-success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+.alert-icon i {
+    font-size: 1.8rem;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-content strong {
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.alert-content p {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.alert-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 0.5rem;
+    color: #0c5460;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.alert-link:hover {
+    text-decoration: underline;
+}
+
+/* Participants */
+.participants-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.participant-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+    width: 70px;
+}
+
+.participant-avatar {
+    width: 55px;
+    height: 55px;
+}
+
+.participant-avatar img,
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.participant-name {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+    max-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.participant-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    background: #f8f9fa;
+    border-radius: 30px;
+    height: 55px;
+    padding: 0 20px;
+}
+
+/* Partage */
+.share-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.share-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.share-btn.whatsapp {
+    background: #25D366;
+    color: white;
+}
+
+.share-btn.facebook {
+    background: #1877F2;
+    color: white;
+}
+
+.share-btn.email {
+    background: #7f8c8d;
+    color: white;
+}
+
+.share-btn.copy-link {
+    background: #3498db;
+    color: white;
+}
+
+.share-btn:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.05);
+}
+
+/* Admin buttons */
+.admin-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.admin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.admin-btn.edit {
+    background: #3498db;
+    color: white;
+}
+
+.admin-btn.edit:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
+.admin-btn.delete {
+    background: #e74c3c;
+    color: white;
+}
+
+.admin-btn.delete:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .event-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .event-detail-container {
+        margin: 1rem;
+        border-radius: 20px;
+    }
+    
+    .event-hero {
+        height: 250px;
+    }
+    
+    .hero-title h1 {
+        font-size: 1.3rem;
+    }
+    
+    .hero-title {
+        padding: 20px;
+    }
+    
+    .event-info-grid {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        gap: 0.8rem;
+    }
+    
+    .event-description-card,
+    .event-registration-card,
+    .event-participants-card,
+    .event-share-card,
+    .admin-actions-card {
+        padding: 1.5rem;
+    }
+    
+    .section-title h2 {
+        font-size: 1.1rem;
+    }
+    
+    .btn-register {
+        font-size: 1rem;
+        padding: 1rem;
+    }
+    
+    .alert {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .share-buttons {
+        flex-direction: column;
+    }
+    
+    .share-btn {
+        justify-content: center;
+    }
+    
+    .admin-buttons {
+        flex-direction: column;
+    }
+    
+    .participants-grid {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .event-hero {
+        height: 200px;
+    }
+    
+    .hero-title h1 {
+        font-size: 1rem;
+    }
+    
+    .event-badge-floating {
+        top: 10px;
+        right: 10px;
+        padding: 5px 12px;
+        font-size: 0.7rem;
+    }
+    
+    .info-card {
+        padding: 0.8rem;
+    }
+    
+    .info-icon i {
+        font-size: 1.3rem;
+    }
+    
+    .participant-card {
+        width: 60px;
+    }
+    
+    .participant-avatar {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .participant-more {
+        height: 45px;
+        font-size: 0.7rem;
+    }
+}
+</style>
+
+<script>
+function copyLink(event) {
+    event.preventDefault();
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        // Afficher une notification temporaire
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Lien copié !';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: jeunesse-eglise
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: daphne -b 0.0.0.0 -p $PORT jeunesse_eglise.asgi:application
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+
+  

@@ -1,0 +1,604 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Contact - Jeunesse Église{% endblock %}
+
+{% block content %}
+<div class="contact-page">
+    <!-- En-tête -->
+    <div class="contact-header">
+        <div class="contact-header-icon">
+            <i class="bi bi-envelope-paper-fill"></i>
+        </div>
+        <h1>Contactez-nous</h1>
+        <p>Nous sommes là pour répondre à vos questions et prières</p>
+    </div>
+
+    <div class="contact-wrapper">
+        <!-- Formulaire de contact -->
+        <div class="contact-form-card">
+            <div class="form-header">
+                <i class="bi bi-chat-dots"></i>
+                <h2>Envoyez-nous un message</h2>
+                <p>Remplissez le formulaire et nous vous répondrons dans les plus brefs délais</p>
+            </div>
+            
+            <form method="post" class="contact-form">
+                {% csrf_token %}
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="bi bi-person"></i> Nom complet <span class="required">*</span></label>
+                        <input type="text" name="name" required placeholder="Votre nom">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="bi bi-envelope"></i> Email <span class="required">*</span></label>
+                        <input type="email" name="email" required placeholder="votre@email.com">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="bi bi-telephone"></i> Téléphone</label>
+                    <input type="tel" name="phone" placeholder="+243 XX XXX XXXX">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="bi bi-tag"></i> Sujet <span class="required">*</span></label>
+                    <select name="subject" required>
+                        <option value="general">📋 Question générale</option>
+                        <option value="event">📅 Événement</option>
+                        <option value="teaching">🎧 Enseignement</option>
+                        <option value="donation">💰 Don</option>
+                        <option value="prayer">🙏 Prière</option>
+                        <option value="testimony">✨ Témoignage</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="bi bi-pencil"></i> Message <span class="required">*</span></label>
+                    <textarea name="message" rows="5" required placeholder="Votre message..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn-submit">
+                    <span>Envoyer le message</span>
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- Informations de contact -->
+        <div class="contact-info-card">
+            <div class="info-header">
+                <i class="bi bi-info-circle-fill"></i>
+                <h2>Informations</h2>
+                <p>Entrez en contact avec nous</p>
+            </div>
+
+            <div class="info-list">
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="bi bi-geo-alt-fill"></i>
+                    </div>
+                    <div class="info-content">
+                        <h3>Notre adresse</h3>
+                        <p>123 Avenue de l'Église<br>Kinshasa, RDC</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="bi bi-telephone-fill"></i>
+                    </div>
+                    <div class="info-content">
+                        <h3>Contact direct</h3>
+                        <p><i class="bi bi-whatsapp"></i> WhatsApp: +243 XXX XXX XXX</p>
+                        <p><i class="bi bi-telephone"></i> Téléphone: +243 XXX XXX XXX</p>
+                        <p><i class="bi bi-envelope"></i> contact@jeunesseeglise.com</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="bi bi-clock-fill"></i>
+                    </div>
+                    <div class="info-content">
+                        <h3>Horaires d'activités</h3>
+                        <p><strong>🏠 Culte de jeunes:</strong> Samedi 16h-18h</p>
+                        <p><strong>📖 Étude biblique:</strong> Mercredi 17h-18h30</p>
+                        <p><strong>🎵 Louange:</strong> Vendredi 18h-20h</p>
+                        <p><strong>🏢 Bureau:</strong> Lundi-Vendredi 9h-17h</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="social-section">
+                <h3>Suivez-nous</h3>
+                <div class="social-links">
+                    <a href="#" class="social-icon whatsapp">
+                        <i class="bi bi-whatsapp"></i>
+                        <span>WhatsApp</span>
+                    </a>
+                    <a href="#" class="social-icon facebook">
+                        <i class="bi bi-facebook"></i>
+                        <span>Facebook</span>
+                    </a>
+                    <a href="#" class="social-icon instagram">
+                        <i class="bi bi-instagram"></i>
+                        <span>Instagram</span>
+                    </a>
+                    <a href="#" class="social-icon youtube">
+                        <i class="bi bi-youtube"></i>
+                        <span>YouTube</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section carte -->
+    <div class="map-card">
+        <div class="map-header">
+            <i class="bi bi-map-fill"></i>
+            <h2>Nous trouver</h2>
+            <p>Venez nous rencontrer dans notre lieu de rassemblement</p>
+        </div>
+        <div class="map-container">
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d63870.64313114063!2d15.2462!3d-4.325!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1a6a317d50af1f3d%3A0x7d6c3f5d2bfa1625!2sKinshasa%2C%20Democratic%20Republic%20of%20the%20Congo!5e0!3m2!1sen!2s!4v1700000000000!5m2!1sen!2s" 
+                width="100%" 
+                height="350" 
+                style="border:0; border-radius: 15px;" 
+                allowfullscreen="" 
+                loading="lazy">
+            </iframe>
+        </div>
+        <div class="map-address">
+            <i class="bi bi-pin-map-fill"></i>
+            <span>123 Avenue de l'Église, Kinshasa, RDC</span>
+            <a href="https://maps.google.com" target="_blank">Obtenir l'itinéraire →</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.contact-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* En-tête */
+.contact-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.contact-header-icon {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 10px 25px rgba(52,152,219,0.3);
+    animation: float 3s ease infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.contact-header-icon i {
+    font-size: 2rem;
+    color: white;
+}
+
+.contact-header h1 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.contact-header p {
+    color: #7f8c8d;
+}
+
+/* Wrapper */
+.contact-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+/* Formulaire */
+.contact-form-card {
+    background: white;
+    border-radius: 25px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+}
+
+.contact-form-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.form-header i {
+    font-size: 2rem;
+    color: #3498db;
+    margin-bottom: 10px;
+}
+
+.form-header h2 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.form-header p {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+.required {
+    color: #e74c3c;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #2c3e50;
+}
+
+.form-group label i {
+    margin-right: 5px;
+    color: #3498db;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.btn-submit {
+    width: 100%;
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    color: white;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(52,152,219,0.4);
+    gap: 15px;
+}
+
+/* Carte informations */
+.contact-info-card {
+    background: linear-gradient(135deg, #1e3a5f, #0f2b4f);
+    border-radius: 25px;
+    padding: 30px;
+    color: white;
+    transition: all 0.3s;
+}
+
+.contact-info-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+}
+
+.info-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.info-header i {
+    font-size: 2rem;
+    color: #f39c12;
+    margin-bottom: 10px;
+}
+
+.info-header h2 {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
+
+.info-header p {
+    opacity: 0.8;
+    font-size: 0.85rem;
+}
+
+.info-list {
+    margin-bottom: 25px;
+}
+
+.info-item {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 15px;
+    transition: all 0.3s;
+}
+
+.info-item:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateX(5px);
+}
+
+.info-icon {
+    width: 45px;
+    height: 45px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: #f39c12;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-content h3 {
+    font-size: 1rem;
+    margin-bottom: 5px;
+}
+
+.info-content p {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    margin: 3px 0;
+}
+
+/* Réseaux sociaux */
+.social-section {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.social-section h3 {
+    font-size: 1rem;
+    margin-bottom: 15px;
+}
+
+.social-links {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.social-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 30px;
+    text-decoration: none;
+    color: white;
+    font-size: 0.85rem;
+    transition: all 0.3s;
+}
+
+.social-icon i {
+    font-size: 1.1rem;
+}
+
+.social-icon.whatsapp { background: #25D366; }
+.social-icon.facebook { background: #1877F2; }
+.social-icon.instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.social-icon.youtube { background: #FF0000; }
+
+.social-icon:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.05);
+}
+
+/* Carte Google Maps */
+.map-card {
+    background: white;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.map-header {
+    text-align: center;
+    padding: 25px 20px 20px;
+}
+
+.map-header i {
+    font-size: 2rem;
+    color: #e74c3c;
+    margin-bottom: 10px;
+}
+
+.map-header h2 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.map-header p {
+    color: #7f8c8d;
+    font-size: 0.85rem;
+}
+
+.map-container {
+    padding: 0 20px;
+}
+
+.map-address {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    background: #f8f9fa;
+    flex-wrap: wrap;
+}
+
+.map-address i {
+    color: #e74c3c;
+    font-size: 1.2rem;
+}
+
+.map-address span {
+    color: #2c3e50;
+}
+
+.map-address a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.map-address a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .contact-wrapper {
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+}
+
+@media (max-width: 768px) {
+    .contact-page {
+        padding: 15px;
+    }
+    
+    .contact-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .contact-header-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .contact-header-icon i {
+        font-size: 1.5rem;
+    }
+    
+    .contact-form-card,
+    .contact-info-card {
+        padding: 20px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .info-item {
+        padding: 12px;
+    }
+    
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .social-links {
+        gap: 10px;
+    }
+    
+    .social-icon {
+        padding: 6px 14px;
+        font-size: 0.75rem;
+    }
+    
+    .map-container {
+        padding: 0 15px;
+    }
+    
+    .map-address {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .contact-header h1 {
+        font-size: 1.3rem;
+    }
+    
+    .form-header h2,
+    .info-header h2,
+    .map-header h2 {
+        font-size: 1.2rem;
+    }
+    
+    .social-links {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .social-icon {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}

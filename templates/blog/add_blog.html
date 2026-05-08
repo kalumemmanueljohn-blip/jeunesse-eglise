@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}✍️ Écrire un article - Blog{% endblock %}
+
+{% block content %}
+<div class="add-blog-container">
+    <div class="form-header">
+        <h1>✍️ Écrire un article</h1>
+        <p>Partagez votre témoignage ou enseignement avec la communauté</p>
+    </div>
+
+    <div class="form-card">
+        <form method="post" enctype="multipart/form-data" class="blog-form">
+            {% csrf_token %}
+            
+            <!-- Titre -->
+            <div class="form-group">
+                <label>{{ form.title.label }}</label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <div class="text-danger">{{ form.title.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Auteur -->
+            <div class="form-group">
+                <label>{{ form.author.label }}</label>
+                {{ form.author }}
+            </div>
+
+            <!-- Résumé -->
+            <div class="form-group">
+                <label>{{ form.excerpt.label }}</label>
+                {{ form.excerpt }}
+                <small class="form-text text-muted">Court résumé qui apparaîtra dans la liste des articles</small>
+            </div>
+
+            <!-- Contenu -->
+            <div class="form-group">
+                <label>{{ form.content.label }}</label>
+                {{ form.content }}
+                <small class="form-text text-muted">Utilisez des paragraphes pour une meilleure lecture</small>
+            </div>
+
+            <!-- Image -->
+            <div class="form-group">
+                <label>{{ form.featured_image.label }}</label>
+                {{ form.featured_image }}
+                <div class="image-preview" id="imagePreview" style="display: none;">
+                    <img id="previewImg" src="#" alt="Aperçu">
+                    <button type="button" class="remove-image" onclick="removeImage()">✖</button>
+                </div>
+                <small class="form-text text-muted">Format JPG, PNG. Taille idéale : 800x400px</small>
+            </div>
+
+            <!-- Tags -->
+            <div class="form-group">
+                <label>{{ form.tags.label }}</label>
+                {{ form.tags }}
+                <small class="form-text text-muted">Exemple : foi, témoignage, prière, louange</small>
+            </div>
+
+            <!-- Statut et mise en avant -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>{{ form.status.label }}</label>
+                    {{ form.status }}
+                </div>
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        {{ form.is_featured }}
+                        <span>{{ form.is_featured.label }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Boutons -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-cloud-upload"></i> Publier l'article
+                </button>
+                <a href="{% url 'blog' %}" class="btn btn-outline">
+                    <i class="bi bi-arrow-left"></i> Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="help-card">
+        <h3>💡 Conseils pour un bon article</h3>
+        <ul>
+            <li><strong>Titre accrocheur :</strong> Donnez envie de lire dès le début</li>
+            <li><strong>Introduction :</strong> Captez l'attention dès les premières lignes</li>
+            <li><strong>Paragraphes courts :</strong> Plus faciles à lire sur mobile</li>
+            <li><strong>Image de qualité :</strong> Illustrez votre propos</li>
+            <li><strong>Tags pertinents :</strong> Aident à catégoriser l'article</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+.add-blog-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.form-header h1 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.form-header p {
+    color: #7f8c8d;
+}
+
+.form-card {
+    background: white;
+    border-radius: 20px;
+    padding: 35px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+}
+
+textarea.form-control {
+    resize: vertical;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.checkbox-label input {
+    width: 20px;
+    height: 20px;
+}
+
+.form-text {
+    font-size: 0.75rem;
+    color: #95a5a6;
+    margin-top: 5px;
+}
+
+/* Image preview */
+.image-preview {
+    margin-top: 15px;
+    position: relative;
+    display: inline-block;
+}
+
+.image-preview img {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 10px;
+    border: 2px solid #ddd;
+}
+
+.remove-image {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #27ae60, #229954);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(39,174,96,0.3);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid #3498db;
+    color: #3498db;
+}
+
+.btn-outline:hover {
+    background: #3498db;
+    color: white;
+}
+
+.help-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 25px;
+    color: white;
+}
+
+.help-card h3 {
+    margin-bottom: 15px;
+}
+
+.help-card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.help-card li {
+    padding: 8px 0;
+    padding-left: 20px;
+    position: relative;
+}
+
+.help-card li::before {
+    content: "✨";
+    position: absolute;
+    left: 0;
+}
+
+.text-danger {
+    color: #e74c3c;
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+    .form-card {
+        padding: 20px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// Aperçu de l'image
+const imageInput = document.querySelector('#id_featured_image');
+const imagePreview = document.getElementById('imagePreview');
+const previewImg = document.getElementById('previewImg');
+
+if (imageInput) {
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                previewImg.src = event.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+function removeImage() {
+    imageInput.value = '';
+    imagePreview.style.display = 'none';
+    previewImg.src = '#';
+}
+</script>
+{% endblock %}

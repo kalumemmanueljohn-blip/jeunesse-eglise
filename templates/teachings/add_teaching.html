@@ -1,0 +1,691 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}➕ Ajouter un enseignement - CITE BETHEL BANDAL MOULEART{% endblock %}
+
+{% block content %}
+<div class="add-teaching-page">
+    <!-- En-tête avec animation -->
+    <div class="page-header">
+        <a href="{% url 'teachings' %}" class="back-link">
+            <i class="bi bi-arrow-left"></i> Retour aux enseignements
+        </a>
+        <div class="header-icon">
+            <i class="bi bi-mic-fill"></i>
+        </div>
+        <h1>➕ Ajouter un enseignement</h1>
+        <p>Proposez un nouveau contenu spirituel pour nourrir la communauté</p>
+        <div class="header-decoration">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <form method="post" enctype="multipart/form-data" class="teaching-form" id="teachingForm">
+            {% csrf_token %}
+            
+            <!-- Titre -->
+            <div class="form-group">
+                <label><i class="bi bi-tag"></i> {{ form.title.label }} <span class="required">*</span></label>
+                {{ form.title }}
+                <small>Titre clair et accrocheur pour attirer l'attention</small>
+                {% if form.title.errors %}
+                    <div class="error-message">{{ form.title.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Prédicateur -->
+            <div class="form-group">
+                <label><i class="bi bi-person-badge"></i> {{ form.speaker.label }} <span class="required">*</span></label>
+                {{ form.speaker }}
+                <small>Nom du prédicateur ou enseignant</small>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label><i class="bi bi-text-paragraph"></i> {{ form.description.label }} <span class="required">*</span></label>
+                {{ form.description }}
+                <small>Décrivez brièvement le contenu de cet enseignement</small>
+            </div>
+
+            <!-- Type de contenu -->
+            <div class="form-group">
+                <label><i class="bi bi-grid-3x3-gap-fill"></i> {{ form.content_type.label }} <span class="required">*</span></label>
+                {{ form.content_type }}
+                <div class="type-hint">
+                    <span class="hint audio"><i class="bi bi-mic"></i> Audio: MP3, WAV, OGG, M4A</span>
+                    <span class="hint video"><i class="bi bi-camera-reels"></i> Vidéo: MP4, YouTube, Vimeo</span>
+                    <span class="hint pdf"><i class="bi bi-file-pdf"></i> PDF: Documents, études</span>
+                </div>
+            </div>
+
+            <!-- Fichier -->
+            <div class="form-group" id="fileGroup">
+                <label><i class="bi bi-cloud-upload"></i> {{ form.file.label }}</label>
+                <div class="file-upload-area">
+                    {{ form.file }}
+                    <label for="{{ form.file.id_for_label }}" class="file-upload-label">
+                        <i class="bi bi-folder2-open"></i>
+                        <span>Choisir un fichier</span>
+                    </label>
+                </div>
+                <small><i class="bi bi-info-circle"></i> Formats acceptés : MP3, MP4, PDF, WAV, OGG, M4A (max 50MB)</small>
+                <div id="fileNameDisplay" class="file-name-display"></div>
+            </div>
+
+            <!-- Lien vidéo -->
+            <div class="form-group" id="urlGroup" style="display: none;">
+                <label><i class="bi bi-link-45deg"></i> {{ form.video_url.label }}</label>
+                {{ form.video_url }}
+                <div class="video-preview" id="videoPreview" style="display: none;">
+                    <i class="bi bi-youtube"></i>
+                    <span>Aperçu YouTube</span>
+                </div>
+                <small><i class="bi bi-youtube"></i> Lien YouTube ou Vimeo (si vous ne téléchargez pas de fichier)</small>
+            </div>
+
+            <!-- Durée -->
+            <div class="form-group">
+                <label><i class="bi bi-hourglass-split"></i> {{ form.duration.label }}</label>
+                {{ form.duration }}
+                <small>Exemple: 35min, 1h15, 45:30</small>
+            </div>
+
+            <!-- Mise en avant -->
+            <div class="form-check">
+                {{ form.is_featured }}
+                <label class="form-check-label" for="{{ form.is_featured.id_for_label }}">
+                    <i class="bi bi-star-fill"></i> {{ form.is_featured.label }}
+                </label>
+            </div>
+
+            <!-- Boutons -->
+            <div class="form-actions">
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="bi bi-cloud-upload"></i> Publier l'enseignement
+                </button>
+                <a href="{% url 'teachings' %}" class="btn-cancel">
+                    <i class="bi bi-x-circle"></i> Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Conseils -->
+    <div class="help-card">
+        <h3><i class="bi bi-lightbulb"></i> Conseils pour vos contenus</h3>
+        <div class="help-grid">
+            <div class="help-item">
+                <div class="help-icon">🎵</div>
+                <div>
+                    <strong>Audio</strong>
+                    <span>Format MP3, taille max 20MB</span>
+                </div>
+            </div>
+            <div class="help-item">
+                <div class="help-icon">🎥</div>
+                <div>
+                    <strong>Vidéo</strong>
+                    <span>Format MP4, taille max 50MB ou lien YouTube</span>
+                </div>
+            </div>
+            <div class="help-item">
+                <div class="help-icon">📄</div>
+                <div>
+                    <strong>PDF</strong>
+                    <span>Documents d'étude biblique, max 10MB</span>
+                </div>
+            </div>
+            <div class="help-item">
+                <div class="help-icon">📝</div>
+                <div>
+                    <strong>Titre</strong>
+                    <span>Clair et accrocheur</span>
+                </div>
+            </div>
+            <div class="help-item">
+                <div class="help-icon">📖</div>
+                <div>
+                    <strong>Description</strong>
+                    <span>Expliquez brièvement le contenu</span>
+                </div>
+            </div>
+            <div class="help-item">
+                <div class="help-icon">⏱️</div>
+                <div>
+                    <strong>Durée</strong>
+                    <span>Indiquez la durée pour aider les utilisateurs</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.add-teaching-page {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    animation: fadeInPage 0.5s ease;
+}
+
+@keyframes fadeInPage {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* En-tête */
+.page-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    position: relative;
+}
+
+.back-link {
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: #3498db;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.back-link:hover {
+    transform: translateX(-5px);
+    color: #2980b9;
+}
+
+.header-icon {
+    font-size: 3rem;
+    color: #3498db;
+    margin-bottom: 0.5rem;
+    animation: bounceIcon 2s infinite;
+}
+
+@keyframes bounceIcon {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.page-header p {
+    color: #7f8c8d;
+}
+
+.header-decoration {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.header-decoration span {
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #3498db, #f39c12);
+    border-radius: 3px;
+    animation: expandLine 0.8s ease-out;
+}
+
+@keyframes expandLine {
+    from { width: 0; opacity: 0; }
+    to { width: 40px; opacity: 1; }
+}
+
+/* Formulaire */
+.form-card {
+    background: white;
+    border-radius: 25px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+    transition: transform 0.3s;
+}
+
+.form-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 50px rgba(0,0,0,0.12);
+}
+
+.form-group {
+    margin-bottom: 1.8rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.6rem;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.form-group label i {
+    color: #3498db;
+    margin-right: 5px;
+}
+
+.required {
+    color: #e74c3c;
+    margin-left: 3px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    background: white;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+small {
+    display: block;
+    margin-top: 0.5rem;
+    color: #7f8c8d;
+    font-size: 0.75rem;
+}
+
+small i {
+    margin-right: 3px;
+}
+
+.error-message {
+    color: #e74c3c;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    background: #fdeaea;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+/* Type hints */
+.type-hint {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.hint {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hint.audio {
+    background: #e8f8f0;
+    color: #27ae60;
+}
+
+.hint.video {
+    background: #e8f4fd;
+    color: #3498db;
+}
+
+.hint.pdf {
+    background: #fdeaea;
+    color: #e74c3c;
+}
+
+/* File upload */
+.file-upload-area {
+    position: relative;
+}
+
+.file-upload-area input[type="file"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.file-upload-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8f9fa;
+    border: 2px dashed #cbd5e0;
+    padding: 0.9rem 1.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.file-upload-label:hover {
+    background: #edf2f7;
+    border-color: #3498db;
+    transform: translateY(-2px);
+}
+
+.file-upload-label i {
+    font-size: 1.2rem;
+    color: #3498db;
+}
+
+.file-name-display {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #27ae60;
+    display: none;
+}
+
+/* Checkbox */
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    padding: 0.8rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.form-check-input {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #f39c12;
+}
+
+.form-check-label {
+    cursor: pointer;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.form-check-label i {
+    color: #f39c12;
+}
+
+/* Boutons */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.btn-submit {
+    flex: 2;
+    background: linear-gradient(135deg, #27ae60, #219653);
+    color: white;
+    padding: 1rem;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(39,174,96,0.4);
+    gap: 12px;
+}
+
+.btn-cancel {
+    flex: 1;
+    background: #e74c3c;
+    color: white;
+    padding: 1rem;
+    border: none;
+    border-radius: 50px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-cancel:hover {
+    background: #c0392b;
+    transform: translateY(-3px);
+    gap: 12px;
+}
+
+/* Help card */
+.help-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 25px;
+    padding: 2rem;
+    color: white;
+    transition: transform 0.3s;
+}
+
+.help-card:hover {
+    transform: translateY(-3px);
+}
+
+.help-card h3 {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.3rem;
+}
+
+.help-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.help-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem;
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    transition: all 0.3s;
+}
+
+.help-item:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateX(5px);
+}
+
+.help-icon {
+    font-size: 1.5rem;
+}
+
+.help-item div {
+    flex: 1;
+}
+
+.help-item strong {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+}
+
+.help-item span {
+    font-size: 0.7rem;
+    opacity: 0.9;
+}
+
+/* Video preview */
+.video-preview {
+    margin-top: 0.8rem;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #e74c3c;
+}
+
+.video-preview i {
+    font-size: 1.2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .add-teaching-page {
+        padding: 0 1rem;
+        margin: 1rem auto;
+    }
+    
+    .form-card {
+        padding: 1.5rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .back-link {
+        position: static;
+        display: inline-flex;
+        margin-bottom: 1rem;
+        justify-content: center;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .help-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .type-hint {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .hint {
+        width: fit-content;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-card {
+        padding: 1rem;
+    }
+    
+    .help-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .file-upload-label {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// Afficher/masquer le champ fichier ou URL selon le type
+const typeSelect = document.querySelector('#id_content_type');
+const fileGroup = document.getElementById('fileGroup');
+const urlGroup = document.getElementById('urlGroup');
+const videoPreview = document.getElementById('videoPreview');
+const fileInput = document.querySelector('#id_file');
+const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+function toggleFields() {
+    const selectedType = typeSelect ? typeSelect.value : 'audio';
+    
+    if (selectedType === 'video') {
+        if (fileGroup) fileGroup.style.display = 'block';
+        if (urlGroup) urlGroup.style.display = 'block';
+    } else if (selectedType === 'audio') {
+        if (fileGroup) fileGroup.style.display = 'block';
+        if (urlGroup) urlGroup.style.display = 'none';
+        if (videoPreview) videoPreview.style.display = 'none';
+    } else if (selectedType === 'pdf') {
+        if (fileGroup) fileGroup.style.display = 'block';
+        if (urlGroup) urlGroup.style.display = 'none';
+        if (videoPreview) videoPreview.style.display = 'none';
+    } else {
+        if (fileGroup) fileGroup.style.display = 'block';
+        if (urlGroup) urlGroup.style.display = 'none';
+        if (videoPreview) videoPreview.style.display = 'none';
+    }
+}
+
+// Afficher le nom du fichier sélectionné
+if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length) {
+            const fileName = e.target.files[0].name;
+            fileNameDisplay.textContent = `📎 Fichier sélectionné: ${fileName}`;
+            fileNameDisplay.style.display = 'block';
+        } else {
+            fileNameDisplay.style.display = 'none';
+        }
+    });
+}
+
+// Prévisualisation du lien YouTube
+const urlInput = document.querySelector('#id_video_url');
+if (urlInput) {
+    urlInput.addEventListener('input', function() {
+        const url = this.value;
+        if (url && (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com'))) {
+            videoPreview.style.display = 'flex';
+        } else {
+            videoPreview.style.display = 'none';
+        }
+    });
+}
+
+if (typeSelect) {
+    typeSelect.addEventListener('change', toggleFields);
+    toggleFields();
+}
+
+// Animation du bouton de soumission
+const submitBtn = document.getElementById('submitBtn');
+if (submitBtn) {
+    submitBtn.addEventListener('click', function(e) {
+        this.innerHTML = '<i class="bi bi-hourglass-split"></i> Publication en cours...';
+        setTimeout(() => {
+            this.innerHTML = '<i class="bi bi-cloud-upload"></i> Publier l\'enseignement';
+        }, 3000);
+    });
+}
+</script>
+{% endblock %}

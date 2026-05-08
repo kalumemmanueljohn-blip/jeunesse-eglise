@@ -1,0 +1,752 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Gestion des utilisateurs - Administration{% endblock %}
+
+{% block content %}
+<div class="manage-users-page">
+    <div class="page-header">
+        <div class="header-badge">
+            <i class="bi bi-people-fill"></i>
+            <span>Administration</span>
+        </div>
+        <h1><i class="bi bi-people"></i> Gestion des utilisateurs</h1>
+        <p>Gérez les comptes, les permissions et les rôles</p>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-number">{{ total_users }}</div>
+            <div class="stat-label">Total utilisateurs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="bi bi-shield-lock-fill"></i>
+            </div>
+            <div class="stat-number">{{ total_staff }}</div>
+            <div class="stat-label">Staff</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div class="stat-number">{{ total_active }}</div>
+            <div class="stat-label">Actifs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="bi bi-calendar-week"></i>
+            </div>
+            <div class="stat-number">{{ users|length }}</div>
+            <div class="stat-label">Cette page</div>
+        </div>
+    </div>
+
+    <!-- Filtres et recherche -->
+    <div class="filters-bar">
+        <form method="get" class="search-form">
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" placeholder="Rechercher par nom, email..." value="{{ search }}" class="search-input">
+                <button type="submit" class="btn-search">
+                    <i class="bi bi-search"></i> Rechercher
+                </button>
+                {% if search %}
+                    <a href="{% url 'manage_users' %}" class="btn-clear">
+                        <i class="bi bi-x-circle"></i> Effacer
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+        
+        <div class="filter-buttons">
+            <div class="filter-group">
+                <span class="filter-label">Rôle:</span>
+                <a href="?{% if search %}search={{ search }}&{% endif %}role=all" class="filter-btn {% if role == 'all' or not role %}active{% endif %}">Tous</a>
+                <a href="?{% if search %}search={{ search }}&{% endif %}role=staff" class="filter-btn {% if role == 'staff' %}active{% endif %}">👑 Staff</a>
+                <a href="?{% if search %}search={{ search }}&{% endif %}role=admin" class="filter-btn {% if role == 'admin' %}active{% endif %}">⭐ Admin</a>
+                <a href="?{% if search %}search={{ search }}&{% endif %}role=user" class="filter-btn {% if role == 'user' %}active{% endif %}">👤 Membres</a>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Statut:</span>
+                <a href="?{% if search %}search={{ search }}&{% endif %}status=all" class="filter-btn {% if status == 'all' or not status %}active{% endif %}">Tous</a>
+                <a href="?{% if search %}search={{ search }}&{% endif %}status=active" class="filter-btn {% if status == 'active' %}active{% endif %}">✅ Actifs</a>
+                <a href="?{% if search %}search={{ search }}&{% endif %}status=inactive" class="filter-btn {% if status == 'inactive' %}active{% endif %}">❌ Inactifs</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tableau des utilisateurs -->
+    <div class="users-table-container">
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th><i class="bi bi-person-circle"></i> Utilisateur</th>
+                    <th><i class="bi bi-envelope"></i> Email</th>
+                    <th><i class="bi bi-telephone"></i> Téléphone</th>
+                    <th><i class="bi bi-person-badge"></i> Type</th>
+                    <th><i class="bi bi-calendar"></i> Inscrit le</th>
+                    <th><i class="bi bi-check-circle"></i> Statut</th>
+                    <th><i class="bi bi-gear"></i> Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr class="{% if not user.is_active %}inactive-row{% endif %}">
+                        <td>{{ forloop.counter }}</td>
+                        <td class="user-cell">
+                            <div class="user-avatar">
+                                {% if user.profile.avatar %}
+                                    <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+                                {% else %}
+                                    <div class="avatar-placeholder">
+                                        {{ user.username|slice:":1"|upper }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="user-info">
+                                <strong>{{ user.get_full_name|default:user.username }}</strong>
+                                <small>@{{ user.username }}</small>
+                            </div>
+                        </td>
+                        <td>{{ user.email|default:"—" }}</td>
+                        <td>{{ user.profile.phone_number|default:"—" }}</td>
+                        <td>
+                            {% if user.is_superuser %}
+                                <span class="badge admin">⭐ Administrateur</span>
+                            {% elif user.is_staff %}
+                                <span class="badge staff">👑 Staff</span>
+                            {% else %}
+                                <span class="badge user">👤 Membre</span>
+                            {% endif %}
+                            {% if user.profile.member_type %}
+                                <br>
+                                <small class="member-type">
+                                    {% if user.profile.member_type == 'staff' %}Staff
+                                    {% elif user.profile.member_type == 'regular' %}Membre régulier
+                                    {% else %}Invité{% endif %}
+                                </small>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.date_joined|date:"d/m/Y" }}</td>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="status-badge active">✅ Actif</span>
+                            {% else %}
+                                <span class="status-badge inactive">❌ Inactif</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell">
+                            <div class="action-buttons">
+                                <a href="#" class="action-btn view" title="Voir le profil" onclick="viewUser({{ user.id }})">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if not user.is_superuser %}
+                                    <a href="{% url 'toggle_user_status' user.id %}" class="action-btn toggle-status" title="{% if user.is_active %}Désactiver{% else %}Activer{% endif %}" onclick="return confirm('Confirmer la {% if user.is_active %}désactivation{% else %}activation{% endif %} de {{ user.username }} ?')">
+                                        <i class="bi bi-{% if user.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
+                                    </a>
+                                    <a href="{% url 'toggle_user_staff' user.id %}" class="action-btn toggle-staff" title="{% if user.is_staff %}Retirer staff{% else %}Rendre staff{% endif %}" onclick="return confirm('Confirmer le changement de statut staff pour {{ user.username }} ?')">
+                                        <i class="bi bi-shield-{% if user.is_staff %}slash{% else %}plus{% endif %}"></i>
+                                    </a>
+                                    <a href="{% url 'delete_user' user.id %}" class="action-btn delete" title="Supprimer" onclick="return confirm('⚠️ Supprimer définitivement {{ user.username }} ?')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="empty-row">
+                            <i class="bi bi-inbox"></i>
+                            <p>Aucun utilisateur trouvé</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if users.has_other_pages %}
+    <div class="pagination-section">
+        <div class="pagination">
+            {% if users.has_previous %}
+                <a href="?page=1{% if search %}&search={{ search }}{% endif %}{% if role %}&role={{ role }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="page-link">&laquo;</a>
+                <a href="?page={{ users.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if role %}&role={{ role }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="page-link">&lsaquo;</a>
+            {% endif %}
+            
+            <span class="page-current">
+                Page {{ users.number }} sur {{ users.paginator.num_pages }}
+            </span>
+            
+            {% if users.has_next %}
+                <a href="?page={{ users.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if role %}&role={{ role }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="page-link">&rsaquo;</a>
+                <a href="?page={{ users.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if role %}&role={{ role }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="page-link">&raquo;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal pour voir le profil -->
+<div id="userModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="bi bi-person-circle"></i> Détails de l'utilisateur</h3>
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="userModalBody">
+            <div class="loading">Chargement...</div>
+        </div>
+    </div>
+</div>
+
+<style>
+.manage-users-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    animation: fadeInPage 0.5s ease;
+}
+
+@keyframes fadeInPage {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* En-tête */
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #e8f4fd, #d6eaf8);
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    color: #3498db;
+    margin-bottom: 15px;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.page-header p {
+    color: #7f8c8d;
+}
+
+/* Statistiques */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.stat-icon i {
+    font-size: 2rem;
+    color: #3498db;
+}
+
+.stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-top: 5px;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+}
+
+/* Filtres */
+.filters-bar {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.search-form {
+    margin-bottom: 15px;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.search-box i {
+    color: #7f8c8d;
+}
+
+.search-input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    min-width: 200px;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.btn-search, .btn-clear {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-search {
+    background: #3498db;
+    color: white;
+}
+
+.btn-search:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
+.btn-clear {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-clear:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.filter-btn {
+    padding: 5px 12px;
+    background: #f0f0f0;
+    color: #2c3e50;
+    text-decoration: none;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+}
+
+.filter-btn:hover {
+    background: #3498db;
+    color: white;
+}
+
+.filter-btn.active {
+    background: #3498db;
+    color: white;
+}
+
+/* Tableau */
+.users-table-container {
+    background: white;
+    border-radius: 20px;
+    overflow-x: auto;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.users-table th {
+    background: #34495e;
+    color: white;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.users-table td {
+    padding: 15px;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.inactive-row {
+    background: #fff5f5;
+    opacity: 0.7;
+}
+
+/* Cellule utilisateur */
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar img, .avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.user-info strong {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.user-info small {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.badge.admin {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.badge.staff {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+}
+
+.badge.user {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+}
+
+.member-type {
+    font-size: 0.65rem;
+    color: #7f8c8d;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+}
+
+.status-badge.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Actions */
+.actions-cell {
+    white-space: nowrap;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.action-btn.view {
+    background: #3498db;
+    color: white;
+}
+
+.action-btn.view:hover {
+    background: #2980b9;
+    transform: scale(1.05);
+}
+
+.action-btn.toggle-status {
+    background: #f39c12;
+    color: white;
+}
+
+.action-btn.toggle-status:hover {
+    background: #e67e22;
+    transform: scale(1.05);
+}
+
+.action-btn.toggle-staff {
+    background: #9b59b6;
+    color: white;
+}
+
+.action-btn.toggle-staff:hover {
+    background: #8e44ad;
+    transform: scale(1.05);
+}
+
+.action-btn.delete {
+    background: #e74c3c;
+    color: white;
+}
+
+.action-btn.delete:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+
+/* Pagination */
+.pagination-section {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.pagination {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.page-link {
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #2c3e50;
+    transition: all 0.3s;
+}
+
+.page-link:hover {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.page-current {
+    padding: 8px 15px;
+    background: #3498db;
+    color: white;
+    border-radius: 8px;
+}
+
+/* Empty row */
+.empty-row {
+    text-align: center;
+    padding: 60px;
+    color: #95a5a6;
+}
+
+.empty-row i {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(3px);
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    width: 500px;
+    max-width: 90%;
+    max-height: 80%;
+    overflow-y: auto;
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #7f8c8d;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .stats-cards {
+        gap: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .manage-users-page {
+        padding: 15px;
+    }
+    
+    .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .filter-buttons {
+        flex-direction: column;
+    }
+    
+    .search-box {
+        flex-direction: column;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+function viewUser(userId) {
+    const modal = document.getElementById('userModal');
+    const modalBody = document.getElementById('userModalBody');
+    
+    modal.style.display = 'flex';
+    modalBody.innerHTML = '<div class="loading">Chargement...</div>';
+    
+    fetch(`/accounts/api/user/${userId}/`)
+        .then(response => response.json())
+        .then(data => {
+            modalBody.innerHTML = `
+                <div class="user-detail">
+                    <div class="detail-avatar">
+                        ${data.avatar ? `<img src="${data.avatar}">` : `<div class="detail-avatar-placeholder">${data.username.charAt(0).toUpperCase()}</div>`}
+                    </div>
+                    <div class="detail-info">
+                        <p><strong><i class="bi bi-person"></i> Nom:</strong> ${data.full_name || data.username}</p>
+                        <p><strong><i class="bi bi-envelope"></i> Email:</strong> ${data.email || 'Non renseigné'}</p>
+                        <p><strong><i class="bi bi-telephone"></i> Téléphone:</strong> ${data.phone || 'Non renseigné'}</p>
+                        <p><strong><i class="bi bi-calendar"></i> Inscrit le:</strong> ${data.date_joined}</p>
+                        <p><strong><i class="bi bi-person-badge"></i> Type:</strong> ${data.member_type || 'Membre'}</p>
+                        ${data.department ? `<p><strong><i class="bi bi-diagram-3"></i> Département:</strong> ${data.department}</p>` : ''}
+                        <p><strong><i class="bi bi-check-circle"></i> Statut:</strong> ${data.is_active ? 'Actif' : 'Inactif'}</p>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            modalBody.innerHTML = '<div class="error">Erreur de chargement</div>';
+        });
+}
+
+function closeModal() {
+    document.getElementById('userModal').style.display = 'none';
+}
+
+// Fermer en cliquant en dehors
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById('userModal');
+    if (e.target === modal) {
+        closeModal();
+    }
+});
+</script>
+{% endblock %}

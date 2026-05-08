@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}💬 Messagerie{% endblock %}
+
+{% block content %}
+<div class="messenger-container">
+    <!-- Colonne de gauche : Liste des conversations -->
+    <div class="conversations-column">
+        <div class="column-header">
+            <h2>💬 Messages</h2>
+            <button class="new-conv-btn" onclick="window.location.href='{% url 'chat:new_message' %}'">
+                <i class="bi bi-plus-lg"></i> Nouvelle discussion
+            </button>
+        </div>
+        
+        <!-- Liste des conversations -->
+        <div class="conversations-list">
+            {% for conversation in conversations %}
+                {% for participant in conversation.participants.all %}
+                    {% if participant != request.user %}
+                        {% with other=participant %}
+                            <a href="{% url 'chat:conversation' other.id %}" 
+                               class="conv-card {% if conversation.unread_count > 0 %}has-unread{% endif %}">
+                                
+                                <!-- Avatar -->
+                                <div class="conv-avatar">
+                                    {% if other.profile.avatar %}
+                                        <img src="{{ other.profile.avatar.url }}" alt="{{ other.username }}">
+                                    {% else %}
+                                        <div class="avatar-default">
+                                            {{ other.get_full_name|default:other.username|slice:":1"|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <span class="online-dot"></span>
+                                </div>
+                                
+                                <!-- Infos -->
+                                <div class="conv-details">
+                                    <div class="conv-header">
+                                        <span class="conv-name">{{ other.get_full_name|default:other.username }}</span>
+                                        <span class="conv-date">{{ conversation.updated_at|date:"d/m/Y H:i" }}</span>
+                                    </div>
+                                    <div class="conv-message-preview">
+                                        {% with last_msg=conversation.messages.first %}
+                                            {% if last_msg %}
+                                                {% if last_msg.sender == request.user %}
+                                                    <span class="you-label">Vous:</span>
+                                                {% else %}
+                                                    <span class="them-label">{{ last_msg.sender.get_first_name|default:last_msg.sender.username }}:</span>
+                                                {% endif %}
+                                                <span class="message-text">
+                                                    {% if last_msg.content %}
+                                                        {{ last_msg.content|truncatechars:50 }}
+                                                    {% elif last_msg.file %}
+                                                        📎 {{ last_msg.file_name|truncatechars:30 }}
+                                                    {% else %}
+                                                        Message
+                                                    {% endif %}
+                                                </span>
+                                            {% else %}
+                                                <span class="message-text empty">💬 Commencez une conversation</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Badge non lu -->
+                                {% if conversation.unread_count > 0 %}
+                                    <div class="unread-count">{{ conversation.unread_count }}</div>
+                                {% endif %}
+                            </a>
+                        {% endwith %}
+                    {% endif %}
+                {% endfor %}
+            {% empty %}
+                <div class="empty-state">
+                    <div class="empty-icon">💬</div>
+                    <p>Aucune conversation</p>
+                    <button class="new-conv-btn" onclick="window.location.href='{% url 'chat:new_message' %}'">
+                        Nouvelle discussion
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Colonne de droite : Bienvenue -->
+    <div class="welcome-column">
+        <div class="welcome-content">
+            <div class="welcome-icon">💬</div>
+            <h3>Messagerie</h3>
+            <p>Sélectionnez une discussion pour commencer</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.messenger-container {
+    display: flex;
+    height: calc(100vh - 180px);
+    background: #f8f9fa;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 5px 30px rgba(0,0,0,0.1);
+}
+
+.conversations-column {
+    width: 420px;
+    background: white;
+    border-right: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+}
+
+.column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.column-header h2 {
+    font-size: 1.3rem;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.new-conv-btn {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s;
+}
+
+.new-conv-btn:hover {
+    transform: scale(1.02);
+}
+
+.conversations-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.conv-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    text-decoration: none;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.conv-card:hover {
+    background: #f8f9fa;
+}
+
+.conv-card.has-unread {
+    background: #e8f4fd;
+}
+
+.conv-avatar {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.conv-avatar img, .avatar-default {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-default {
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.online-dot {
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #2ecc71;
+    border: 2px solid white;
+}
+
+.conv-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.conv-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.conv-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #2c3e50;
+}
+
+.conv-date {
+    font-size: 0.7rem;
+    color: #95a5a6;
+}
+
+.conv-message-preview {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.you-label {
+    color: #3498db;
+    font-weight: 500;
+}
+
+.them-label {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.message-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.unread-count {
+    background: #e74c3c;
+    color: white;
+    border-radius: 20px;
+    min-width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 0 6px;
+}
+
+.welcome-column {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+}
+
+.welcome-content {
+    text-align: center;
+}
+
+.welcome-icon {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.welcome-content h3 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.welcome-content p {
+    color: #7f8c8d;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #95a5a6;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .conversations-column {
+        width: 100%;
+    }
+    
+    .welcome-column {
+        display: none;
+    }
+}
+</style>
+{% endblock %}

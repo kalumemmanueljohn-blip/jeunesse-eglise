@@ -1,0 +1,878 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Faire un don - CITE BETHEL BANDAL MOULEART{% endblock %}
+
+{% block content %}
+<div class="donate-page">
+    <!-- En-tête -->
+    <div class="page-header">
+        <div class="header-badge">
+            <i class="bi bi-heart-fill"></i>
+            <span>Soutenez notre mission</span>
+        </div>
+        <h1>Faire un don</h1>
+        <p>Votre générosité nous aide à grandir et à impacter plus de vies</p>
+        <div class="header-decoration">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <div class="donate-wrapper">
+        <!-- Formulaire de don -->
+        <div class="donate-form-container">
+            <div class="form-header">
+                <i class="bi bi-gift-fill"></i>
+                <h2>Faire un don</h2>
+                <p>Choisissez le montant et le moyen de paiement</p>
+            </div>
+
+            <form method="post" class="donate-form" id="donateForm">
+                {% csrf_token %}
+                
+                <!-- Section montant en DOLLARS -->
+                <div class="amount-section">
+                    <label><i class="bi bi-coin"></i> Montant du don (USD)</label>
+                    <div class="amount-buttons">
+                        <button type="button" class="amount-btn" data-amount="5">5$</button>
+                        <button type="button" class="amount-btn" data-amount="10">10$</button>
+                        <button type="button" class="amount-btn" data-amount="20">20$</button>
+                        <button type="button" class="amount-btn" data-amount="50">50$</button>
+                        <button type="button" class="amount-btn" data-amount="100">100$</button>
+                        <button type="button" class="amount-btn custom">Personnalisé</button>
+                    </div>
+                    <input type="number" name="amount" id="amountInput" class="amount-input" placeholder="Entrez un montant en $" step="1" min="1">
+                </div>
+
+                <!-- Section moyens de paiement - DESIGN SPÉCIFIQUE -->
+                <div class="payment-section">
+                    <label><i class="bi bi-credit-card"></i> Moyen de paiement</label>
+                    <div class="payment-methods-grid">
+                        <!-- M-PESA - Vert -->
+                        <label class="payment-method mpesa">
+                            <input type="radio" name="payment_method" value="mpesa" checked>
+                            <div class="payment-card">
+                                <div class="payment-icon">
+                                    <i class="bi bi-phone"></i>
+                                </div>
+                                <div class="payment-details">
+                                    <strong>M-Pesa</strong>
+                                    <span>Vodacom</span>
+                                </div>
+                                <div class="payment-check">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                            </div>
+                        </label>
+                        
+                        <!-- Airtel Money - Rouge -->
+                        <label class="payment-method airtel">
+                            <input type="radio" name="payment_method" value="airtel">
+                            <div class="payment-card">
+                                <div class="payment-icon">
+                                    <i class="bi bi-phone"></i>
+                                </div>
+                                <div class="payment-details">
+                                    <strong>Airtel Money</strong>
+                                    <span>Airtel</span>
+                                </div>
+                                <div class="payment-check">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                            </div>
+                        </label>
+                        
+                        <!-- Orange Money - ORANGE -->
+                        <label class="payment-method orange">
+                            <input type="radio" name="payment_method" value="orange">
+                            <div class="payment-card">
+                                <div class="payment-icon">
+                                    <i class="bi bi-phone"></i>
+                                </div>
+                                <div class="payment-details">
+                                    <strong>Orange Money</strong>
+                                    <span>Orange</span>
+                                </div>
+                                <div class="payment-check">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Numéro de téléphone -->
+                <div class="phone-section">
+                    <label><i class="bi bi-telephone"></i> Numéro de téléphone</label>
+                    <div class="phone-input-wrapper">
+                        <div class="country-code">+243</div>
+                        <input type="tel" name="phone_number" id="phoneNumber" class="phone-input" placeholder="XX XXX XXXX" required>
+                    </div>
+                    <small>Nous enverrons une confirmation sur ce numéro</small>
+                </div>
+
+                <!-- Message optionnel -->
+                <div class="message-section">
+                    <label><i class="bi bi-chat"></i> Message (optionnel)</label>
+                    <textarea name="message" rows="3" placeholder="Laissez un message pour l'équipe..."></textarea>
+                </div>
+
+                <!-- Don anonyme -->
+                <div class="anonymous-section">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="anonymous" id="anonymousCheck">
+                        <span class="checkmark"></span>
+                        <i class="bi bi-incognito"></i>
+                        <span>Faire un don anonyme</span>
+                    </label>
+                </div>
+
+                <!-- Bouton WhatsApp -->
+                <button type="button" class="btn-whatsapp-final" id="whatsappFinalBtn">
+                    <i class="bi bi-whatsapp"></i> Finaliser via WhatsApp
+                </button>
+                <p class="wa-note">
+                    <i class="bi bi-info-circle"></i> Cliquez pour confirmer votre don via WhatsApp
+                </p>
+            </form>
+        </div>
+
+        <!-- Informations -->
+        <div class="donate-info-container">
+            <!-- Impact -->
+            <div class="info-card impact-card">
+                <div class="card-icon">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <h3>Impact de votre don</h3>
+                <div class="impact-list">
+                    <div class="impact-item">
+                        <div class="impact-amount">5$</div>
+                        <div class="impact-desc">Un repas chaud pour un enfant</div>
+                    </div>
+                    <div class="impact-item">
+                        <div class="impact-amount">10$</div>
+                        <div class="impact-desc">Fournitures scolaires pour 2 enfants</div>
+                    </div>
+                    <div class="impact-item">
+                        <div class="impact-amount">25$</div>
+                        <div class="impact-desc">Matériel d'étude pour 5 jeunes</div>
+                    </div>
+                    <div class="impact-item">
+                        <div class="impact-amount">50$</div>
+                        <div class="impact-desc">Soirée d'évangélisation</div>
+                    </div>
+                    <div class="impact-item">
+                        <div class="impact-amount">100$</div>
+                        <div class="impact-desc">Camp de jeunes complet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Mobile Money -->
+            <div class="info-card mm-info">
+                <h3><i class="bi bi-phone"></i> Comment payer ?</h3>
+                <div class="mm-steps">
+                    <div class="step">
+                        <span class="step-num">1</span>
+                        <span>Choisissez votre opérateur</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-num">2</span>
+                        <span>Entrez votre numéro</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-num">3</span>
+                        <span>Confirmez sur WhatsApp</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-num">4</span>
+                        <span>Validez le paiement</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sécurité -->
+            <div class="info-card security-card">
+                <div class="card-icon">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+                <h3>Paiement sécurisé</h3>
+                <p>Vos transactions sont sécurisées via nos partenaires Mobile Money officiels.</p>
+                <div class="security-badges">
+                    <span><i class="bi bi-shield-check"></i> Sécurisé</span>
+                    <span><i class="bi bi-lock-fill"></i> Crypté</span>
+                    <span><i class="bi bi-safe"></i> Fiable</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.donate-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    animation: fadeInPage 0.5s ease;
+}
+
+@keyframes fadeInPage {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* En-tête */
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    color: #e74c3c;
+    margin-bottom: 15px;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    background: linear-gradient(135deg, #2c3e50, #e74c3c);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 10px;
+}
+
+.page-header p {
+    color: #7f8c8d;
+}
+
+.header-decoration {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.header-decoration span {
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #e74c3c, #f39c12);
+    border-radius: 3px;
+    animation: expandLine 0.8s ease-out;
+}
+
+@keyframes expandLine {
+    from { width: 0; opacity: 0; }
+    to { width: 40px; opacity: 1; }
+}
+
+/* Wrapper */
+.donate-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+/* Formulaire */
+.donate-form-container {
+    background: white;
+    border-radius: 25px;
+    padding: 2rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.form-header i {
+    font-size: 2rem;
+    color: #e74c3c;
+    margin-bottom: 0.5rem;
+}
+
+.form-header h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.3rem;
+}
+
+.form-header p {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+/* Montant */
+.amount-section {
+    margin-bottom: 1.5rem;
+}
+
+.amount-section label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.amount-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.amount-btn {
+    padding: 0.6rem 1.2rem;
+    border: 2px solid #e0e0e0;
+    background: #f8f9fa;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.amount-btn:hover {
+    border-color: #e74c3c;
+    background: #e74c3c;
+    color: white;
+}
+
+.amount-btn.active {
+    background: #e74c3c;
+    border-color: #e74c3c;
+    color: white;
+}
+
+.amount-btn.custom {
+    background: #ecf0f1;
+}
+
+.amount-input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-size: 1rem;
+}
+
+.amount-input:focus {
+    outline: none;
+    border-color: #e74c3c;
+}
+
+/* ========== DESIGN SPÉCIFIQUE MOBILE MONEY ========== */
+.payment-section {
+    margin-bottom: 1.5rem;
+}
+
+.payment-section label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.payment-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.payment-method {
+    cursor: pointer;
+}
+
+.payment-method input {
+    display: none;
+}
+
+.payment-card {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem;
+    border-radius: 15px;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+/* M-PESA - Vert */
+.payment-method.mpesa .payment-card {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    border-color: #4CAF50;
+}
+
+.payment-method.mpesa .payment-icon i {
+    font-size: 1.8rem;
+    color: #4CAF50;
+}
+
+.payment-method.mpesa .payment-details strong {
+    color: #2e7d32;
+}
+
+/* Airtel Money - Rouge */
+.payment-method.airtel .payment-card {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    border-color: #f44336;
+}
+
+.payment-method.airtel .payment-icon i {
+    font-size: 1.8rem;
+    color: #f44336;
+}
+
+.payment-method.airtel .payment-details strong {
+    color: #c62828;
+}
+
+/* Orange Money - ORANGE */
+.payment-method.orange .payment-card {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border-color: #FF9800;
+}
+
+.payment-method.orange .payment-icon i {
+    font-size: 1.8rem;
+    color: #FF9800;
+}
+
+.payment-method.orange .payment-details strong {
+    color: #e65100;
+}
+
+.payment-details {
+    flex: 1;
+}
+
+.payment-details strong {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.payment-details span {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+}
+
+.payment-check {
+    opacity: 0;
+    transition: all 0.3s;
+    font-size: 1.2rem;
+}
+
+.payment-method.mpesa .payment-check { color: #4CAF50; }
+.payment-method.airtel .payment-check { color: #f44336; }
+.payment-method.orange .payment-check { color: #FF9800; }
+
+.payment-method:has(input:checked) .payment-card {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.payment-method:has(input:checked) .payment-check {
+    opacity: 1;
+}
+
+/* Téléphone */
+.phone-section {
+    margin-bottom: 1.5rem;
+}
+
+.phone-section label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.phone-input-wrapper {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.country-code {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.phone-input {
+    flex: 1;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-size: 1rem;
+}
+
+.phone-input:focus {
+    outline: none;
+    border-color: #e74c3c;
+}
+
+.phone-section small {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.7rem;
+    color: #7f8c8d;
+}
+
+/* Message */
+.message-section {
+    margin-bottom: 1.5rem;
+}
+
+.message-section label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.message-section textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+/* Don anonyme */
+.anonymous-section {
+    margin-bottom: 1.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+}
+
+.checkbox-label input {
+    display: none;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 5px;
+    display: inline-block;
+    position: relative;
+}
+
+.checkbox-label input:checked + .checkmark {
+    background: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.checkbox-label input:checked + .checkmark::after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+}
+
+/* Bouton WhatsApp */
+.btn-whatsapp-final {
+    width: 100%;
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    color: white;
+    padding: 1rem;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-whatsapp-final:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(37,211,102,0.3);
+    gap: 15px;
+}
+
+.wa-note {
+    text-align: center;
+    font-size: 0.7rem;
+    color: #7f8c8d;
+    margin-top: 0.8rem;
+}
+
+/* Informations */
+.donate-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.info-card {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+}
+
+.info-card:hover {
+    transform: translateY(-3px);
+}
+
+.card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.impact-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.impact-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.impact-amount {
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+.impact-desc {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+/* Mobile Money steps */
+.mm-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 0.5rem;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f8f9fa;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-size: 0.8rem;
+}
+
+.step-num {
+    width: 24px;
+    height: 24px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+/* Sécurité */
+.security-badges {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1rem;
+}
+
+.security-badges span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    color: #27ae60;
+}
+
+.security-badges i {
+    font-size: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .donate-wrapper {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .donate-page {
+        padding: 15px;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .payment-methods-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .payment-card {
+        padding: 1rem;
+    }
+    
+    .amount-buttons {
+        justify-content: center;
+    }
+    
+    .header-decoration span {
+        width: 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .impact-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .phone-input-wrapper {
+        flex-direction: column;
+    }
+    
+    .country-code {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .mm-steps {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+// Gestion des montants
+const amountBtns = document.querySelectorAll('.amount-btn');
+const amountInput = document.getElementById('amountInput');
+
+amountBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+        const amount = this.dataset.amount;
+        if (amount) {
+            amountInput.value = amount;
+            amountBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        } else if (this.classList.contains('custom')) {
+            amountInput.value = '';
+            amountInput.focus();
+            amountBtns.forEach(b => b.classList.remove('active'));
+        }
+    });
+});
+
+amountInput.addEventListener('input', function() {
+    if (this.value) {
+        amountBtns.forEach(b => b.classList.remove('active'));
+    }
+});
+
+// Bouton WhatsApp
+const whatsappBtn = document.getElementById('whatsappFinalBtn');
+const phoneInput = document.getElementById('phoneNumber');
+const amountInputDonate = document.getElementById('amountInput');
+const anonymousCheck = document.getElementById('anonymousCheck');
+
+function getSelectedPaymentMethod() {
+    const selected = document.querySelector('input[name="payment_method"]:checked');
+    if (selected) {
+        const methods = {
+            'mpesa': 'M-Pesa',
+            'airtel': 'Airtel Money',
+            'orange': 'Orange Money'
+        };
+        return methods[selected.value];
+    }
+    return 'Mobile Money';
+}
+
+function getPaymentColor() {
+    const selected = document.querySelector('input[name="payment_method"]:checked');
+    if (selected) {
+        const colors = {
+            'mpesa': '🟢',
+            'airtel': '🔴',
+            'orange': '🟠'
+        };
+        return colors[selected.value];
+    }
+    return '📱';
+}
+
+whatsappBtn.addEventListener('click', () => {
+    const amount = amountInputDonate.value;
+    const phone = phoneInput.value;
+    const paymentMethod = getSelectedPaymentMethod();
+    const paymentColor = getPaymentColor();
+    const isAnonymous = anonymousCheck.checked;
+    
+    if (!amount || amount <= 0) {
+        alert('⚠️ Veuillez entrer un montant valide');
+        return;
+    }
+    
+    if (!phone) {
+        alert('⚠️ Veuillez entrer votre numéro de téléphone');
+        return;
+    }
+    
+    // Nettoyer le numéro
+    const cleanPhone = phone.replace(/\s/g, '');
+    
+    let message = `🙏 *DON SPIRITUEL* 🙏\n\n`;
+    message += `✨ *Je fais un don de ${amount}$* ✨\n\n`;
+    message += `${paymentColor} *Opérateur:* ${paymentMethod}\n`;
+    message += `📞 *Numéro:* +243 ${cleanPhone}\n`;
+    if (!isAnonymous) {
+        const userName = document.querySelector('.user-details strong')?.innerText || 'Membre';
+        message += `👤 *Donateur:* ${userName}\n`;
+    } else {
+        message += `👤 *Donateur:* Anonyme 🤫\n`;
+    }
+    message += `\n━━━━━━━━━━━━━━━━━━━━\n`;
+    message += `💝 *Que Dieu vous bénisse abondamment !* 💝\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+    message += `📞 Contactez-nous pour finaliser le paiement.`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappNumber = '243830360200'; // Remplacez par votre numéro
+    
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, '_blank');
+});
+</script>
+{% endblock %}

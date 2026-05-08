@@ -1,0 +1,1103 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Discussion avec {{ other_user.get_full_name|default:other_user.username }}{% endblock %}
+
+{% block content %}
+<div class="chat-fullscreen">
+    <!-- En-tête -->
+    <div class="chat-header">
+        <a href="{% url 'chat:inbox' %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div class="user-info">
+            <div class="user-avatar">
+                {% if other_user.profile.avatar %}
+                    <img src="{{ other_user.profile.avatar.url }}" alt="{{ other_user.username }}">
+                {% else %}
+                    <div class="avatar-placeholder">{{ other_user.get_full_name|default:other_user.username|first|upper }}</div>
+                {% endif %}
+                <span class="online-status" id="onlineIndicator"></span>
+            </div>
+            <div class="user-details">
+                <strong>{{ other_user.get_full_name|default:other_user.username }}</strong>
+                <small id="userStatusText">En ligne</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zone des messages -->
+    <div class="messages-area" id="messagesList">
+        {% for msg in messages %}
+            <div class="message {% if msg.sender == request.user %}sent{% else %}received{% endif %}" data-message-id="{{ msg.id }}">
+                <div class="message-bubble">
+                    {% if msg.content %}
+                        <div class="message-text">{{ msg.content|linebreaksbr }}</div>
+                    {% endif %}
+                    
+                    {% if msg.file %}
+                        <div class="message-attachment">
+                            {% with file_type=msg.get_file_type %}
+                                {% if file_type == 'image' %}
+                                    <img src="{{ msg.file.url }}" class="attachment-img" onclick="openImageModal('{{ msg.file.url }}')">
+                                {% elif file_type == 'video' %}
+                                    <video controls class="attachment-video" preload="metadata">
+                                        <source src="{{ msg.file.url }}" type="video/mp4">
+                                    </video>
+                                {% elif file_type == 'audio' %}
+                                    <div class="audio-wrapper" data-audio-url="{{ msg.file.url }}">
+                                        <button class="audio-play-pause">
+                                            <i class="bi bi-play-fill"></i>
+                                        </button>
+                                        <div class="audio-progress-container">
+                                            <div class="audio-progress-bar"></div>
+                                        </div>
+                                        <span class="audio-time-display">0:00</span>
+                                    </div>
+                                {% else %}
+                                    <a href="{{ msg.file.url }}" download class="attachment-link">
+                                        <i class="bi bi-file-earmark"></i> {{ msg.file_name }}
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="message-time">
+                        {{ msg.created_at|date:"H:i" }}
+                        {% if msg.sender == request.user %}
+                            {% if msg.is_read %}<i class="bi bi-check2-all"></i>{% else %}<i class="bi bi-check2"></i>{% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="empty-messages">
+                <i class="bi bi-chat-dots"></i>
+                <p>Aucun message</p>
+                <span>Soyez le premier à envoyer un message !</span>
+            </div>
+        {% endfor %}
+        <div id="typingIndicator" class="typing-indicator" style="display: none;">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span>quelqu'un écrit...</span>
+        </div>
+    </div>
+
+    <!-- Zone de saisie -->
+    <div class="chat-footer">
+        <div class="input-actions">
+            <button class="attach-btn" id="attachBtn">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+            <div class="attach-menu" id="attachMenu">
+                <button class="menu-item" data-type="image">
+                    <i class="bi bi-image"></i> Photo
+                </button>
+                <button class="menu-item" data-type="video">
+                    <i class="bi bi-camera-reels"></i> Vidéo
+                </button>
+                <button class="menu-item" data-type="audiofile">
+                    <i class="bi bi-mic"></i> Fichier audio
+                </button>
+                <button class="menu-item" data-type="document">
+                    <i class="bi bi-file-earmark"></i> Document
+                </button>
+            </div>
+            <input type="file" id="fileInput" style="display: none;">
+        </div>
+        
+        <div class="input-wrapper">
+            <input type="text" id="messageInput" placeholder="Message..." class="message-input">
+        </div>
+        
+        <button class="voice-btn" id="voiceBtn">
+            <i class="bi bi-mic-fill"></i>
+        </button>
+        
+        <button class="send-btn" id="sendBtn">
+            <i class="bi bi-send-fill"></i>
+        </button>
+        
+        <div class="voice-recorder" id="voiceRecorder" style="display: none;">
+            <div class="recording-wave">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <span class="recording-time" id="recordingTime">00:00</span>
+            <button class="stop-recording" id="stopRecordingBtn">
+                <i class="bi bi-stop-fill"></i> Arrêter
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="imageModal" class="image-modal" style="display: none;">
+    <span class="close-modal" onclick="closeImageModal()">&times;</span>
+    <img class="modal-image" id="modalImage">
+</div>
+
+<style>
+/* Styles principaux */
+.chat-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    background: #f0f2f5;
+    z-index: 1050;
+}
+
+body .main-content {
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
+.chat-header {
+    background: white;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #e4e6eb;
+    flex-shrink: 0;
+}
+
+.back-btn {
+    font-size: 1.3rem;
+    text-decoration: none;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.back-btn:hover {
+    background: #f0f2f5;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.user-avatar {
+    position: relative;
+}
+
+.user-avatar img, .avatar-placeholder {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.online-status {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.online-status.online { background: #2ecc71; }
+.online-status.offline { background: #95a5a6; }
+
+.user-details strong { display: block; font-size: 0.95rem; color: #2c3e50; }
+.user-details small { font-size: 0.7rem; color: #7f8c8d; }
+
+.messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.message {
+    display: flex;
+    width: 100%;
+}
+
+.message.sent { justify-content: flex-end; }
+.message.received { justify-content: flex-start; }
+
+.message-bubble {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 0.9rem;
+    word-wrap: break-word;
+}
+
+.message.sent .message-bubble {
+    background: #0084ff;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message.received .message-bubble {
+    background: white;
+    color: #050505;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.message-text {
+    margin-bottom: 4px;
+}
+
+.message-time {
+    font-size: 0.65rem;
+    text-align: right;
+    margin-top: 4px;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.message-attachment {
+    margin-top: 8px;
+}
+
+.attachment-img {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.attachment-video {
+    max-width: 250px;
+    border-radius: 12px;
+}
+
+.audio-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #e8e8e8;
+    padding: 8px 15px;
+    border-radius: 30px;
+    min-width: 220px;
+}
+
+.message.sent .audio-wrapper {
+    background: rgba(0, 132, 255, 0.15);
+}
+
+.audio-play-pause {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #0084ff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.message.sent .audio-play-pause {
+    background: white;
+}
+
+.message.sent .audio-play-pause i {
+    color: #0084ff;
+}
+
+.audio-play-pause i {
+    font-size: 1rem;
+    color: white;
+    margin-left: 2px;
+}
+
+.audio-progress-container {
+    flex: 1;
+    height: 4px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.message.sent .audio-progress-container {
+    background: rgba(255,255,255,0.3);
+}
+
+.audio-progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #0084ff;
+    border-radius: 5px;
+    transition: width 0.1s linear;
+}
+
+.message.sent .audio-progress-bar {
+    background: white;
+}
+
+.audio-time-display {
+    font-size: 11px;
+    font-family: monospace;
+    min-width: 45px;
+}
+
+.message.sent .audio-time-display {
+    color: white;
+}
+
+.attachment-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 20px;
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.8rem;
+}
+
+.empty-messages {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+}
+
+.empty-messages i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+
+.chat-footer {
+    background: white;
+    padding: 10px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border-top: 1px solid #e4e6eb;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.input-actions {
+    position: relative;
+}
+
+.attach-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    color: #7f8c8d;
+}
+
+.attach-btn:hover {
+    background: #f0f2f5;
+    color: #3498db;
+}
+
+.attach-menu {
+    position: absolute;
+    bottom: 50px;
+    left: 0;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    padding: 8px;
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 150px;
+    z-index: 100;
+}
+
+.attach-menu.active {
+    display: flex;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 15px;
+    border: none;
+    background: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    width: 100%;
+    text-align: left;
+}
+
+.menu-item:hover {
+    background: #f0f2f5;
+}
+
+.input-wrapper {
+    flex: 1;
+}
+
+.message-input {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #e4e6eb;
+    border-radius: 25px;
+    outline: none;
+    font-size: 0.9rem;
+    background: #f0f2f5;
+}
+
+.message-input:focus {
+    background: white;
+    border-color: #0084ff;
+}
+
+.voice-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    color: #0084ff;
+}
+
+.voice-btn.recording {
+    background: #e74c3c;
+    color: white;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.send-btn {
+    background: #0084ff;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.send-btn:hover {
+    background: #0066cc;
+    transform: scale(1.05);
+}
+
+.voice-recorder {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: white;
+    padding: 8px 16px;
+    border-radius: 40px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+}
+
+.recording-wave {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 30px;
+}
+
+.recording-wave span {
+    width: 3px;
+    height: 10px;
+    background: #e74c3c;
+    border-radius: 2px;
+    animation: wave 0.5s ease infinite alternate;
+}
+
+@keyframes wave {
+    from { transform: scaleY(0.5); }
+    to { transform: scaleY(1); }
+}
+
+.recording-time {
+    font-family: monospace;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+.stop-recording {
+    background: #e74c3c;
+    border: none;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 25px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 20px;
+    width: fit-content;
+    margin-top: 8px;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #95a5a6;
+    animation: typingAnim 1.4s infinite;
+}
+
+@keyframes typingAnim {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+}
+
+.image-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-image {
+    max-width: 90%;
+    max-height: 90%;
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: white;
+    font-size: 40px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .user-avatar img, .avatar-placeholder { width: 40px; height: 40px; }
+    .message-bubble { max-width: 85%; padding: 8px 12px; font-size: 0.85rem; }
+    .attachment-img, .attachment-video { max-width: 180px; }
+    .audio-wrapper { min-width: 180px; }
+    .chat-footer { padding: 8px 12px; }
+}
+
+@media (max-width: 480px) {
+    .message-bubble { max-width: 90%; }
+    .audio-wrapper { min-width: 160px; }
+}
+
+/* Notification pour la confirmation de fichier */
+.file-notification {
+    position: absolute;
+    bottom: 70px;
+    left: 10px;
+    right: 10px;
+    background: white;
+    border-radius: 15px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 200;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    flex: 1;
+    overflow: hidden;
+}
+
+.file-info span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-info small {
+    color: #7f8c8d;
+    flex-shrink: 0;
+}
+
+.file-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.file-actions button {
+    border: none;
+    cursor: pointer;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.confirm-send {
+    background: #27ae60;
+    color: white;
+}
+
+.confirm-send:hover {
+    background: #219653;
+    transform: scale(1.02);
+}
+
+.cancel-send {
+    background: #e74c3c;
+    color: white;
+}
+
+.cancel-send:hover {
+    background: #c0392b;
+    transform: scale(1.02);
+}
+</style>
+
+<script>
+const convId = {{ conversation.id }};
+const otherId = {{ other_user.id }};
+let mediaRecorder = null;
+let audioChunks = [];
+let recordingTimer = null;
+let recordingSeconds = 0;
+let pendingFile = null;
+let statusInterval = null;
+let activityTimeout = null;
+let currentUserStatus = false;
+
+function scrollDown() {
+    const el = document.getElementById('messagesList');
+    if (el) el.scrollTop = el.scrollHeight;
+}
+scrollDown();
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function sendMessage(txt, file) {
+    let fd = new FormData();
+    fd.append('content', txt || '');
+    if (file) {
+        fd.append('file', file);
+    }
+    
+    const sendBtn = document.getElementById('sendBtn');
+    const originalHtml = sendBtn.innerHTML;
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+    
+    fetch(`/chat/api/send/${convId}/`, {
+        method: 'POST',
+        body: fd,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(async response => {
+        const data = await response.json();
+        if (response.ok && data.id) {
+            location.reload();
+        } else {
+            alert('Erreur: ' + (data.error || 'Problème de connexion'));
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = originalHtml;
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur de connexion au serveur');
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = originalHtml;
+    });
+}
+
+// Afficher la notification de confirmation avant l'envoi
+function showFileConfirm(file) {
+    const fileName = file.name;
+    const fileSize = (file.size / 1024 / 1024).toFixed(2);
+    
+    const oldNotification = document.querySelector('.file-notification');
+    if (oldNotification) oldNotification.remove();
+    
+    const notification = document.createElement('div');
+    notification.className = 'file-notification';
+    notification.innerHTML = `
+        <div class="file-info">
+            <i class="bi bi-file-earmark"></i>
+            <span title="${fileName}">${fileName.length > 30 ? fileName.substring(0, 30) + '...' : fileName}</span>
+            <small>(${fileSize} MB)</small>
+        </div>
+        <div class="file-actions">
+            <button class="confirm-send">📤 Envoyer</button>
+            <button class="cancel-send">❌ Annuler</button>
+        </div>
+    `;
+    
+    const chatFooter = document.querySelector('.chat-footer');
+    chatFooter.appendChild(notification);
+    
+    notification.querySelector('.confirm-send').onclick = () => {
+        notification.remove();
+        sendMessage('', file);
+        pendingFile = null;
+    };
+    
+    notification.querySelector('.cancel-send').onclick = () => {
+        notification.remove();
+        document.getElementById('fileInput').value = '';
+        pendingFile = null;
+    };
+}
+
+// Menu d'attachement
+const attachBtn = document.getElementById('attachBtn');
+const attachMenu = document.getElementById('attachMenu');
+const fileInput = document.getElementById('fileInput');
+
+attachBtn.addEventListener('click', () => {
+    attachMenu.classList.toggle('active');
+});
+
+document.addEventListener('click', (e) => {
+    if (!attachBtn.contains(e.target) && !attachMenu.contains(e.target)) {
+        attachMenu.classList.remove('active');
+    }
+});
+
+document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const type = item.dataset.type;
+        let accept = '';
+        switch(type) {
+            case 'image': accept = 'image/*'; break;
+            case 'video': accept = 'video/*'; break;
+            case 'audiofile': accept = 'audio/*'; break;
+            case 'document': accept = '.pdf,.doc,.docx,.txt'; break;
+        }
+        fileInput.accept = accept;
+        fileInput.click();
+        attachMenu.classList.remove('active');
+    });
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) {
+        pendingFile = e.target.files[0];
+        showFileConfirm(pendingFile);
+        fileInput.value = '';
+    }
+});
+
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+
+sendBtn.onclick = () => {
+    const val = messageInput.value.trim();
+    if (val) { 
+        sendMessage(val); 
+        messageInput.value = ''; 
+    }
+};
+
+messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const val = messageInput.value.trim();
+        if (val) { 
+            sendMessage(val); 
+            messageInput.value = ''; 
+        }
+    }
+});
+
+// Enregistrement vocal
+const voiceBtn = document.getElementById('voiceBtn');
+const voiceRecorder = document.getElementById('voiceRecorder');
+const recordingTimeSpan = document.getElementById('recordingTime');
+const stopRecordingBtn = document.getElementById('stopRecordingBtn');
+
+async function startVoiceRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = event => {
+            audioChunks.push(event.data);
+        };
+        
+        mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioFile = new File([audioBlob], 'voice_message.webm', { type: 'audio/webm' });
+            sendMessage('', audioFile);
+            stopRecordingUI();
+            stream.getTracks().forEach(track => track.stop());
+        };
+        
+        mediaRecorder.start();
+        startRecordingUI();
+        
+    } catch (error) {
+        console.error('Erreur microphone:', error);
+        alert('Impossible d\'accéder au microphone. Vérifiez les permissions.');
+    }
+}
+
+function startRecordingUI() {
+    voiceBtn.classList.add('recording');
+    voiceRecorder.style.display = 'flex';
+    recordingSeconds = 0;
+    recordingTimeSpan.textContent = '00:00';
+    recordingTimer = setInterval(() => {
+        recordingSeconds++;
+        const minutes = Math.floor(recordingSeconds / 60);
+        const seconds = recordingSeconds % 60;
+        recordingTimeSpan.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }, 1000);
+}
+
+function stopRecordingUI() {
+    voiceBtn.classList.remove('recording');
+    voiceRecorder.style.display = 'none';
+    if (recordingTimer) clearInterval(recordingTimer);
+}
+
+voiceBtn.addEventListener('click', startVoiceRecording);
+stopRecordingBtn.addEventListener('click', () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+    }
+});
+
+// ========== STATUT EN LIGNE ==========
+function updateOnlineStatus(isOnline) {
+    fetch('/chat/api/online-status/', {
+        method: 'POST',
+        body: JSON.stringify({ is_online: isOnline }),
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    }).catch(error => console.error('Erreur mise à jour statut:', error));
+}
+
+function updateStatus() {
+    fetch(`/chat/api/status/?user_ids=${otherId}`)
+        .then(r => r.json())
+        .then(data => {
+            let s = data[otherId];
+            let dot = document.getElementById('onlineIndicator');
+            let txt = document.getElementById('userStatusText');
+            
+            if (s && s.is_online) {
+                dot.className = 'online-status online';
+                txt.innerText = 'En ligne';
+                currentUserStatus = true;
+            } else {
+                dot.className = 'online-status offline';
+                if (s && s.last_seen) {
+                    txt.innerText = `Vu à ${s.last_seen}`;
+                } else {
+                    txt.innerText = 'Hors ligne';
+                }
+                currentUserStatus = false;
+            }
+        })
+        .catch(error => console.error('Erreur statut:', error));
+}
+
+// Détecter l'activité utilisateur
+function resetActivityTimer() {
+    if (activityTimeout) clearTimeout(activityTimeout);
+    if (!currentUserStatus) {
+        updateOnlineStatus(true);
+        currentUserStatus = true;
+    }
+    activityTimeout = setTimeout(() => {
+        updateOnlineStatus(false);
+        currentUserStatus = false;
+    }, 60000);
+}
+
+const activityEvents = ['click', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+activityEvents.forEach(event => {
+    document.addEventListener(event, resetActivityTimer);
+});
+
+resetActivityTimer();
+updateStatus();
+statusInterval = setInterval(updateStatus, 30000);
+
+window.addEventListener('beforeunload', () => {
+    updateOnlineStatus(false);
+    if (statusInterval) clearInterval(statusInterval);
+    if (activityTimeout) clearTimeout(activityTimeout);
+});
+
+// Modal image
+function openImageModal(url) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('modalImage');
+    modal.style.display = 'flex';
+    img.src = url;
+}
+function closeImageModal() {
+    document.getElementById('imageModal').style.display = 'none';
+}
+
+// Lecteur audio personnalisé
+function initAudioPlayers() {
+    const audioWrappers = document.querySelectorAll('.audio-wrapper');
+    
+    audioWrappers.forEach(wrapper => {
+        if (wrapper.dataset.initialized === 'true') return;
+        wrapper.dataset.initialized = 'true';
+        
+        const audioUrl = wrapper.dataset.audioUrl;
+        const playBtn = wrapper.querySelector('.audio-play-pause');
+        const progressContainer = wrapper.querySelector('.audio-progress-container');
+        const progressBar = wrapper.querySelector('.audio-progress-bar');
+        const timeDisplay = wrapper.querySelector('.audio-time-display');
+        
+        const audio = new Audio(audioUrl);
+        let isPlaying = false;
+        
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function updateProgress() {
+            if (audio.duration) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressBar.style.width = `${percent}%`;
+                timeDisplay.textContent = formatTime(audio.currentTime);
+            }
+        }
+        
+        audio.addEventListener('loadedmetadata', () => {
+            timeDisplay.textContent = formatTime(0);
+        });
+        
+        audio.addEventListener('timeupdate', updateProgress);
+        
+        audio.addEventListener('ended', () => {
+            isPlaying = false;
+            playBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+            progressBar.style.width = '0%';
+            timeDisplay.textContent = formatTime(0);
+        });
+        
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                audio.pause();
+                playBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+            } else {
+                audio.play();
+                playBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+            }
+            isPlaying = !isPlaying;
+        });
+        
+        progressContainer.addEventListener('click', (e) => {
+            const rect = progressContainer.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            if (audio.duration) {
+                audio.currentTime = percent * audio.duration;
+            }
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initAudioPlayers);
+setTimeout(initAudioPlayers, 500);
+</script>
+{% endblock %}

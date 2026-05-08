@@ -1,0 +1,1018 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}📅 Événements - CITE BETHEL BANDAL MOULEART{% endblock %}
+
+{% block content %}
+<div class="events-page">
+    <!-- En-tête -->
+    <div class="events-header">
+        <div class="events-header-content">
+            <div class="header-badge">
+                <span class="badge-icon">🎯</span>
+                <span>Nos activités</span>
+            </div>
+            <h1>
+                <span class="header-icon">📅</span>
+                Événements
+                <span class="header-icon">✨</span>
+            </h1>
+            <p>Participez aux activités et rencontres de la communauté</p>
+        </div>
+        
+        <!-- Bouton Ajouter un événement -->
+        {% if user.is_staff or user.is_superuser %}
+        <div class="admin-actions">
+            <a href="{% url 'add_event' %}" class="btn-add-event">
+                <i class="bi bi-plus-circle"></i> Ajouter un événement
+            </a>
+        </div>
+        {% endif %}
+        
+        <!-- Compteur du prochain événement -->
+        <div class="next-event-counter" id="nextEventCounter" style="display: none;">
+            <div class="counter-title">
+                <span>🎯 Prochain événement dans :</span>
+            </div>
+            <div class="counter-boxes">
+                <div class="counter-box">
+                    <span class="counter-number" id="counterDays">00</span>
+                    <span class="counter-label">Jours</span>
+                </div>
+                <div class="counter-box">
+                    <span class="counter-number" id="counterHours">00</span>
+                    <span class="counter-label">Heures</span>
+                </div>
+                <div class="counter-box">
+                    <span class="counter-number" id="counterMinutes">00</span>
+                    <span class="counter-label">Minutes</span>
+                </div>
+                <div class="counter-box">
+                    <span class="counter-number" id="counterSeconds">00</span>
+                    <span class="counter-label">Secondes</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtres -->
+    <div class="events-filters">
+        <div class="filter-group">
+            <button class="filter-btn active" data-filter="all">
+                <i class="bi bi-grid-3x3-gap-fill"></i> Tous
+            </button>
+            <button class="filter-btn" data-filter="upcoming">
+                <i class="bi bi-clock-history"></i> À venir
+            </button>
+            <button class="filter-btn" data-filter="ongoing">
+                <i class="bi bi-play-circle-fill"></i> En cours
+            </button>
+            <button class="filter-btn" data-filter="past">
+                <i class="bi bi-check-circle-fill"></i> Passés
+            </button>
+        </div>
+        
+        <div class="search-group">
+            <div class="search-wrapper">
+                <i class="bi bi-search"></i>
+                <input type="text" id="searchEvents" placeholder="Rechercher un événement...">
+            </div>
+        </div>
+        
+        <div class="view-group">
+            <button class="view-btn active" data-view="grid" title="Vue grille">
+                <i class="bi bi-grid-3x3-gap-fill"></i> Grille
+            </button>
+            <button class="view-btn" data-view="list" title="Vue liste">
+                <i class="bi bi-list-ul"></i> Liste
+            </button>
+        </div>
+    </div>
+    
+    <!-- Vue Grille -->
+    <div class="events-grid" id="eventsGrid">
+        {% for event in events %}
+            <div class="event-card" data-status="{{ event.status }}" data-title="{{ event.title|lower }}" data-location="{{ event.location|lower }}">
+                <div class="event-badge status-{{ event.status }}">
+                    {% if event.status == 'upcoming' %}
+                        <i class="bi bi-clock"></i> À venir
+                    {% elif event.status == 'ongoing' %}
+                        <i class="bi bi-play-circle-fill"></i> En cours
+                    {% else %}
+                        <i class="bi bi-check-circle-fill"></i> Passé
+                    {% endif %}
+                </div>
+                
+                {% if event.is_featured %}
+                    <div class="featured-ribbon">
+                        <span>⭐ À la une</span>
+                    </div>
+                {% endif %}
+                
+                {% if event.image %}
+                    <div class="event-image">
+                        <img src="{{ event.image.url }}" alt="{{ event.title }}">
+                        <div class="image-overlay">
+                            <i class="bi bi-eye"></i>
+                            <span>Voir détails</span>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="event-image placeholder">
+                        <div class="placeholder-content">
+                            <i class="bi bi-calendar-event"></i>
+                            <span>{{ event.title|slice:":2"|upper }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="event-content">
+                    <h3 class="event-title">{{ event.title }}</h3>
+                    
+                    <div class="event-info">
+                        <div class="info-item">
+                            <i class="bi bi-calendar3"></i>
+                            <span>{{ event.date|date:"d/m/Y" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-clock"></i>
+                            <span>{{ event.date|date:"H:i" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-geo-alt"></i>
+                            <span>{{ event.location|truncatechars:20 }}</span>
+                        </div>
+                    </div>
+                    
+                    <p class="event-description">{{ event.description|truncatewords:18 }}</p>
+                    
+                    <div class="event-footer">
+                        <div class="spots-info">
+                            <i class="bi bi-people"></i>
+                            <span>
+                                {% if event.max_participants == 0 %}
+                                    Illimité
+                                {% else %}
+                                    {{ event.remaining_places }} / {{ event.max_participants }} places
+                                {% endif %}
+                            </span>
+                        </div>
+                        <a href="{% url 'event_detail' event.id %}" class="event-btn">
+                            Détails <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="no-events">
+                <div class="no-events-icon">
+                    <i class="bi bi-calendar-x"></i>
+                </div>
+                <h3>Aucun événement pour le moment</h3>
+                <p>Revenez bientôt pour découvrir nos prochaines activités !</p>
+                {% if user.is_staff or user.is_superuser %}
+                    <a href="{% url 'add_event' %}" class="btn-add-first">
+                        <i class="bi bi-plus-circle"></i> Créer le premier événement
+                    </a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Vue Liste -->
+    <div class="events-list-view" id="eventsListView" style="display: none;">
+        {% for event in events %}
+            <div class="event-list-item" data-status="{{ event.status }}">
+                <div class="event-date-box">
+                    <span class="date-day">{{ event.date|date:"d" }}</span>
+                    <span class="date-month">{{ event.date|date:"M"|upper }}</span>
+                    <span class="date-year">{{ event.date|date:"Y" }}</span>
+                </div>
+                <div class="event-list-content">
+                    <h4>{{ event.title }}</h4>
+                    <div class="event-list-info">
+                        <span><i class="bi bi-clock"></i> {{ event.date|date:"H:i" }}</span>
+                        <span><i class="bi bi-geo-alt"></i> {{ event.location|truncatechars:30 }}</span>
+                    </div>
+                    <p class="event-list-desc">{{ event.description|truncatewords:12 }}</p>
+                </div>
+                <div class="event-list-actions">
+                    <span class="status-badge status-{{ event.status }}">
+                        {% if event.status == 'upcoming' %}À venir{% elif event.status == 'ongoing' %}En cours{% else %}Passé{% endif %}
+                    </span>
+                    <a href="{% url 'event_detail' event.id %}" class="btn-list">
+                        Voir <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.events-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    animation: fadeInPage 0.5s ease;
+}
+
+@keyframes fadeInPage {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* En-tête - Sans vagues */
+.events-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #3498db 100%);
+    border-radius: 30px;
+    padding: 3rem 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: white;
+    position: relative;
+}
+
+.events-header-content {
+    position: relative;
+    z-index: 2;
+}
+
+.header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    margin-bottom: 20px;
+    animation: fadeInDown 0.6s ease;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.events-header-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.header-icon {
+    font-size: 2rem;
+    animation: bounce 2s ease infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.events-header-content p {
+    opacity: 0.9;
+    animation: fadeInUp 0.6s ease 0.2s both;
+}
+
+/* Admin actions */
+.admin-actions {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 3;
+}
+
+.btn-add-event {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.btn-add-event:hover {
+    background: rgba(255,255,255,0.4);
+    transform: scale(1.05);
+}
+
+.btn-add-first {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 1rem;
+    background: #f39c12;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 30px;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-add-first:hover {
+    background: #e67e22;
+    transform: translateY(-2px);
+}
+
+/* Compteur */
+.next-event-counter {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    position: relative;
+    z-index: 2;
+}
+
+.counter-title {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.counter-boxes {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.counter-box {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 0.8rem 1.2rem;
+    min-width: 70px;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.counter-box:hover {
+    transform: translateY(-3px);
+    background: rgba(255,255,255,0.25);
+}
+
+.counter-number {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+.counter-label {
+    font-size: 0.65rem;
+    opacity: 0.8;
+}
+
+/* Filtres */
+.events-filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1rem 1.5rem;
+    background: white;
+    border-radius: 60px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+}
+
+.filter-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn, .view-btn {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.filter-btn i, .view-btn i {
+    font-size: 1rem;
+}
+
+.filter-btn:hover, .view-btn:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+.filter-btn.active, .view-btn.active {
+    background: #3498db;
+    color: white;
+}
+
+/* Espacement entre les boutons de vue */
+.view-group {
+    display: flex;
+    gap: 10px;
+}
+
+.search-group {
+    flex: 1;
+    max-width: 320px;
+}
+
+.search-wrapper {
+    position: relative;
+}
+
+.search-wrapper i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7f8c8d;
+}
+
+.search-wrapper input {
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 40px;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.search-wrapper input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+}
+
+/* Grille événements */
+.events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.event-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+    position: relative;
+}
+
+.event-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.event-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.status-upcoming {
+    background: #3498db;
+    color: white;
+}
+
+.status-ongoing {
+    background: #e74c3c;
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+.status-past {
+    background: #95a5a6;
+    color: white;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.featured-ribbon {
+    position: absolute;
+    top: 1rem;
+    left: -30px;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    padding: 5px 30px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    transform: rotate(-45deg);
+    z-index: 2;
+    width: 120px;
+    text-align: center;
+}
+
+.event-image {
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.event-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+}
+
+.event-card:hover .event-image img {
+    transform: scale(1.08);
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.event-card:hover .image-overlay {
+    opacity: 1;
+}
+
+.image-overlay i {
+    font-size: 2rem;
+}
+
+.image-overlay span {
+    background: white;
+    padding: 0.4rem 1rem;
+    border-radius: 30px;
+    color: #2c3e50;
+    font-size: 0.8rem;
+}
+
+.event-image.placeholder {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.placeholder-content {
+    text-align: center;
+    color: white;
+}
+
+.placeholder-content i {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.placeholder-content span {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.event-content {
+    padding: 1.5rem;
+}
+
+.event-title {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+    line-height: 1.4;
+}
+
+.event-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    color: #7f8c8d;
+}
+
+.info-item i {
+    font-size: 0.9rem;
+}
+
+.event-description {
+    color: #7f8c8d;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+
+.event-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.spots-info {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    color: #27ae60;
+    font-weight: 500;
+}
+
+.event-btn {
+    background: #3498db;
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.event-btn:hover {
+    background: #2980b9;
+    gap: 0.5rem;
+}
+
+/* Vue liste */
+.events-list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.event-list-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: all 0.3s;
+}
+
+.event-list-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+.event-date-box {
+    text-align: center;
+    min-width: 65px;
+    background: linear-gradient(135deg, #f8f9fa, #ecf0f1);
+    padding: 0.5rem;
+    border-radius: 12px;
+}
+
+.date-day {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #3498db;
+}
+
+.date-month {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: #7f8c8d;
+}
+
+.date-year {
+    font-size: 0.6rem;
+    color: #95a5a6;
+}
+
+.event-list-content {
+    flex: 1;
+}
+
+.event-list-content h4 {
+    margin-bottom: 0.3rem;
+    color: #2c3e50;
+}
+
+.event-list-info {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: #7f8c8d;
+    margin-bottom: 0.5rem;
+}
+
+.event-list-info i {
+    margin-right: 0.2rem;
+}
+
+.event-list-desc {
+    font-size: 0.8rem;
+    color: #95a5a6;
+}
+
+.event-list-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.status-badge {
+    padding: 0.2rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.7rem;
+}
+
+.btn-list {
+    padding: 0.3rem 1rem;
+    background: #3498db;
+    color: white;
+    text-decoration: none;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-list:hover {
+    background: #2980b9;
+    gap: 8px;
+}
+
+/* État vide */
+.no-events {
+    text-align: center;
+    padding: 4rem;
+    background: white;
+    border-radius: 25px;
+}
+
+.no-events-icon {
+    font-size: 4rem;
+    color: #bdc3c7;
+    margin-bottom: 1rem;
+}
+
+.no-events h3 {
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.no-events p {
+    color: #7f8c8d;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .events-filters {
+        border-radius: 20px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        justify-content: center;
+    }
+    
+    .search-group {
+        max-width: 100%;
+    }
+    
+    .view-group {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .events-page {
+        padding: 15px;
+    }
+    
+    .events-header {
+        padding: 2rem 1rem;
+    }
+    
+    .events-header-content h1 {
+        font-size: 1.8rem;
+    }
+    
+    .admin-actions {
+        position: static;
+        margin-top: 1rem;
+        display: inline-block;
+    }
+    
+    .events-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .event-list-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .event-list-info {
+        justify-content: center;
+    }
+    
+    .event-list-actions {
+        justify-content: center;
+    }
+    
+    .counter-box {
+        padding: 0.5rem 0.8rem;
+        min-width: 55px;
+    }
+    
+    .counter-number {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-group {
+        flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+    }
+    
+    .view-group {
+        gap: 8px;
+    }
+}
+</style>
+
+<script>
+// Filtres
+const filterBtns = document.querySelectorAll('.filter-btn');
+const viewBtns = document.querySelectorAll('.view-btn');
+const eventsGrid = document.getElementById('eventsGrid');
+const eventsListView = document.getElementById('eventsListView');
+const searchInput = document.getElementById('searchEvents');
+let currentFilter = 'all';
+let currentView = 'grid';
+
+function filterEvents() {
+    const searchTerm = searchInput.value.toLowerCase();
+    const gridCards = document.querySelectorAll('#eventsGrid .event-card');
+    const listItems = document.querySelectorAll('#eventsListView .event-list-item');
+    
+    gridCards.forEach(card => {
+        const status = card.dataset.status;
+        const title = card.dataset.title;
+        const matchFilter = currentFilter === 'all' || status === currentFilter;
+        const matchSearch = searchTerm === '' || title.includes(searchTerm);
+        card.style.display = matchFilter && matchSearch ? 'block' : 'none';
+    });
+    
+    listItems.forEach(item => {
+        const status = item.dataset.status;
+        const title = item.querySelector('h4').textContent.toLowerCase();
+        const matchFilter = currentFilter === 'all' || status === currentFilter;
+        const matchSearch = searchTerm === '' || title.includes(searchTerm);
+        item.style.display = matchFilter && matchSearch ? 'flex' : 'none';
+    });
+}
+
+filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        filterEvents();
+    });
+});
+
+if (searchInput) {
+    searchInput.addEventListener('input', filterEvents);
+}
+
+viewBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        viewBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentView = btn.dataset.view;
+        
+        if (currentView === 'grid') {
+            eventsGrid.style.display = 'grid';
+            eventsListView.style.display = 'none';
+        } else {
+            eventsGrid.style.display = 'none';
+            eventsListView.style.display = 'flex';
+        }
+    });
+});
+
+// Compteur à rebours
+function updateCountdown() {
+    const events = document.querySelectorAll('#eventsGrid .event-card');
+    let nextEventDate = null;
+    
+    for (const event of events) {
+        if (event.dataset.status === 'upcoming' && event.style.display !== 'none') {
+            const dateEl = event.querySelector('.info-item:first-child span:last-child');
+            if (dateEl) {
+                const dateStr = dateEl.textContent;
+                const [day, month, year] = dateStr.split('/');
+                const timeEl = event.querySelector('.info-item:nth-child(2) span:last-child');
+                let hours = '23', minutes = '59';
+                if (timeEl) {
+                    const timeStr = timeEl.textContent;
+                    [hours, minutes] = timeStr.split(':');
+                }
+                const eventDateTime = new Date(`${year}-${month}-${day}T${hours}:${minutes}:00`);
+                if (eventDateTime > new Date()) {
+                    if (!nextEventDate || eventDateTime < nextEventDate) {
+                        nextEventDate = eventDateTime;
+                    }
+                }
+            }
+        }
+    }
+    
+    const counterDiv = document.getElementById('nextEventCounter');
+    
+    if (nextEventDate) {
+        const now = new Date();
+        const diff = nextEventDate - now;
+        
+        if (diff > 0) {
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (86400000)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (3600000)) / (1000 * 60));
+            const seconds = Math.floor((diff % (60000)) / 1000);
+            
+            const daysEl = document.getElementById('counterDays');
+            const hoursEl = document.getElementById('counterHours');
+            const minutesEl = document.getElementById('counterMinutes');
+            const secondsEl = document.getElementById('counterSeconds');
+            
+            if (daysEl) daysEl.textContent = days.toString().padStart(2, '0');
+            if (hoursEl) hoursEl.textContent = hours.toString().padStart(2, '0');
+            if (minutesEl) minutesEl.textContent = minutes.toString().padStart(2, '0');
+            if (secondsEl) secondsEl.textContent = seconds.toString().padStart(2, '0');
+            counterDiv.style.display = 'block';
+        } else {
+            counterDiv.style.display = 'none';
+        }
+    } else {
+        counterDiv.style.display = 'none';
+    }
+}
+
+updateCountdown();
+setInterval(updateCountdown, 1000);
+</script>
+{% endblock %}

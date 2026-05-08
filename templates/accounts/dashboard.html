@@ -1,0 +1,1069 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mon Dashboard - CITE BETHEL BANDAL MOULEART{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1><i class="bi bi-speedometer2"></i> Mon Tableau de bord</h1>
+        <p>Bienvenue, {{ user.username }} ! 👋</p>
+    </div>
+
+    <!-- Statistiques rapides -->
+    <div class="stats-row">
+        <div class="stat-card-mini">
+            <div class="stat-icon">📅</div>
+            <div class="stat-number">{{ my_events|length }}</div>
+            <div class="stat-label">Événements</div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-icon">💬</div>
+            <div class="stat-number">{{ unread_messages_count|default:0 }}</div>
+            <div class="stat-label">Messages</div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-icon">💰</div>
+            <div class="stat-number">{{ my_donations|length }}</div>
+            <div class="stat-label">Dons</div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-icon">❤️</div>
+            <div class="stat-number">
+                {% if user.profile.member_type == 'staff' %}
+                    Staff
+                {% elif user.profile.member_type == 'regular' %}
+                    Membre
+                {% else %}
+                    Invité
+                {% endif %}
+            </div>
+            <div class="stat-label">Statut</div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Carte Profil -->
+        <div class="dashboard-card profile-card">
+            <div class="profile-header">
+                {% if user.profile.avatar %}
+                    <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="profile-avatar">
+                {% else %}
+                    <div class="profile-avatar-placeholder">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                {% endif %}
+                <h3>{{ user.get_full_name|default:user.username }}</h3>
+                
+                <!-- Badge du type de membre -->
+                <div class="member-badge">
+                    {% if user.profile.member_type == 'staff' %}
+                        <span class="badge-staff">👑 Staff - {{ user.profile.get_department_display }}</span>
+                    {% elif user.profile.member_type == 'regular' %}
+                        <span class="badge-regular">🙏 Membre régulier</span>
+                    {% else %}
+                        <span class="badge-guest">👤 Invité</span>
+                    {% endif %}
+                </div>
+                
+                <p class="user-email"><i class="bi bi-envelope"></i> {{ user.email|default:"Email non renseigné" }}</p>
+                <p class="user-joined"><i class="bi bi-calendar"></i> Membre depuis {{ user.date_joined|date:"F Y" }}</p>
+                <a href="{% url 'profile_edit' %}" class="btn-edit-profile">
+                    <i class="bi bi-pencil"></i> Modifier mon profil
+                </a>
+            </div>
+        </div>
+        
+        <!-- Carte Messages -->
+        <div class="dashboard-card messages-card">
+            <div class="card-header">
+                <i class="bi bi-chat-dots-fill"></i>
+                <h3>Messagerie</h3>
+            </div>
+            <p>Discutez avec les autres membres de la communauté</p>
+            <div class="messages-preview">
+                <div class="messages-stats">
+                    {% if unread_messages_count > 0 %}
+                        <span class="messages-count has-unread">
+                            <i class="bi bi-envelope-fill"></i> {{ unread_messages_count }} message(s) non lu(s)
+                        </span>
+                    {% else %}
+                        <span class="messages-count">
+                            <i class="bi bi-envelope-open-fill"></i> Tous vos messages sont lus
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="recent-conversations">
+                    <h4>Conversations récentes</h4>
+                    <div class="recent-list">
+                        {% for conv in request.user.conversations.all|slice:":3" %}
+                            {% with other=conv.get_other_participant %}
+                                {% if other %}
+                                    <a href="{% url 'chat:conversation' other.id %}" class="recent-conv">
+                                        <div class="conv-avatar">
+                                            {% if other.profile.avatar %}
+                                                <img src="{{ other.profile.avatar.url }}" alt="{{ other.username }}">
+                                            {% else %}
+                                                <span>{{ other.username|slice:":1"|upper }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="conv-info">
+                                            <strong>{{ other.get_full_name|default:other.username }}</strong>
+                                            <span class="conv-time">{{ conv.updated_at|date:"H:i" }}</span>
+                                        </div>
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% empty %}
+                            <p class="empty-message">Aucune conversation récente</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'chat:inbox' %}" class="btn-messages">
+                <span>Accéder à la messagerie</span>
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+        
+        <!-- Carte Mes événements -->
+        <div class="dashboard-card events-card">
+            <div class="card-header">
+                <i class="bi bi-calendar-check"></i>
+                <h3>Mes événements</h3>
+            </div>
+            {% if my_events %}
+                <div class="events-list">
+                    {% for participation in my_events|slice:":5" %}
+                        <div class="event-item">
+                            <div class="event-date-badge">
+                                <span class="event-day">{{ participation.event.date|date:"d" }}</span>
+                                <span class="event-month">{{ participation.event.date|date:"M" }}</span>
+                            </div>
+                            <div class="event-details">
+                                <strong>{{ participation.event.title }}</strong>
+                                <div class="event-meta">
+                                    <span><i class="bi bi-clock"></i> {{ participation.event.date|date:"H:i" }}</span>
+                                    <span><i class="bi bi-geo-alt"></i> {{ participation.event.location|truncatechars:20 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if my_events|length > 5 %}
+                    <a href="{% url 'events_list' %}" class="view-all">Voir tous les événements ({{ my_events|length }}) →</a>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-calendar-x"></i>
+                    <p>Vous n'êtes inscrit à aucun événement</p>
+                    <a href="{% url 'events_list' %}" class="btn-primary">Découvrir les événements</a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Carte Mes dons -->
+        <div class="dashboard-card donations-card">
+            <div class="card-header">
+                <i class="bi bi-heart-fill"></i>
+                <h3>Mes dons</h3>
+            </div>
+            {% if my_donations %}
+                <div class="donations-list">
+                    {% for donation in my_donations|slice:":5" %}
+                        <div class="donation-item">
+                            <div class="donation-info">
+                                <span class="donation-amount">{{ donation.amount }}€</span>
+                                <span class="donation-method">{{ donation.get_payment_method_display }}</span>
+                            </div>
+                            <span class="donation-date">{{ donation.created_at|date:"d/m/Y" }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="donation-total">
+                    <span>Total des dons</span>
+                    <strong id="donationTotal">0€</strong>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-credit-card"></i>
+                    <p>Vous n'avez pas encore fait de don</p>
+                    <a href="{% url 'donate' %}" class="btn-primary">Faire un don</a>
+                </div>
+            {% endif %}
+            <a href="{% url 'donate' %}" class="btn-donate-link">Faire un don →</a>
+        </div>
+        
+        <!-- Carte Actions rapides -->
+        <div class="dashboard-card quick-actions-card">
+            <div class="card-header">
+                <i class="bi bi-lightning-charge-fill"></i>
+                <h3>Actions rapides</h3>
+            </div>
+            <div class="quick-actions-grid">
+                <a href="{% url 'chat:inbox' %}" class="quick-action">
+                    <i class="bi bi-chat"></i>
+                    <span>Messages</span>
+                </a>
+                <a href="{% url 'events_list' %}" class="quick-action">
+                    <i class="bi bi-calendar"></i>
+                    <span>Événements</span>
+                </a>
+                <a href="{% url 'teachings' %}" class="quick-action">
+                    <i class="bi bi-headphones"></i>
+                    <span>Enseignements</span>
+                </a>
+                <a href="{% url 'donate' %}" class="quick-action">
+                    <i class="bi bi-heart"></i>
+                    <span>Dons</span>
+                </a>
+                <a href="{% url 'blog' %}" class="quick-action">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Blog</span>
+                </a>
+                <a href="{% url 'gallery' %}" class="quick-action">
+                    <i class="bi bi-images"></i>
+                    <span>Galerie</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Carte Ressources spirituelles -->
+        <div class="dashboard-card resources-card">
+            <div class="card-header">
+                <i class="bi bi-book"></i>
+                <h3>Ressources</h3>
+            </div>
+            <div class="resources-list">
+                <a href="{% url 'teachings' %}" class="resource-link">
+                    <i class="bi bi-headphones"></i>
+                    <div>
+                        <strong>Enseignements</strong>
+                        <span>Messages audio et vidéo</span>
+                    </div>
+                </a>
+                <a href="{% url 'blog' %}" class="resource-link">
+                    <i class="bi bi-pencil-square"></i>
+                    <div>
+                        <strong>Blog</strong>
+                        <span>Articles et témoignages</span>
+                    </div>
+                </a>
+                <a href="{% url 'gallery' %}" class="resource-link">
+                    <i class="bi bi-images"></i>
+                    <div>
+                        <strong>Galerie</strong>
+                        <span>Photos et vidéos</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- ⚠️ NOUVEAU - Carte Suppression de compte (Zone dangereuse) ⚠️ -->
+        <div class="dashboard-card danger-zone-card">
+            <div class="card-header">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <h3>Zone dangereuse</h3>
+            </div>
+            <div class="danger-zone-content">
+                <div class="danger-warning">
+                    <i class="bi bi-shield-exclamation"></i>
+                    <div class="danger-text">
+                        <strong>Supprimer mon compte</strong>
+                        <p>Cette action est irréversible et supprimera toutes vos données</p>
+                    </div>
+                    <a href="{% url 'delete_account' %}" class="btn-delete-account" onclick="return confirm('⚠️ Attention ! La suppression de votre compte est irréversible. Voulez-vous vraiment continuer ?')">
+                        <i class="bi bi-trash"></i> Supprimer mon compte
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ============================================
+   VARIABLES
+   ============================================ */
+:root {
+    --primary: #3498db;
+    --primary-dark: #2980b9;
+    --success: #27ae60;
+    --warning: #f39c12;
+    --danger: #e74c3c;
+    --dark: #2c3e50;
+    --gray: #7f8c8d;
+    --light-gray: #ecf0f1;
+    --white: #ffffff;
+    --shadow: 0 5px 20px rgba(0,0,0,0.08);
+    --shadow-hover: 0 10px 30px rgba(0,0,0,0.12);
+    --border-radius: 20px;
+    --border-radius-sm: 15px;
+}
+
+/* ============================================
+   CONTAINER PRINCIPAL
+   ============================================ */
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.dashboard-header h1 {
+    font-size: 1.8rem;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-header p {
+    color: var(--gray);
+}
+
+/* ============================================
+   STATS ROW
+   ============================================ */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card-mini {
+    background: var(--white);
+    border-radius: var(--border-radius-sm);
+    padding: 1rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+}
+
+.stat-card-mini:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+}
+
+.stat-icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: var(--gray);
+    text-transform: uppercase;
+}
+
+/* ============================================
+   DASHBOARD GRID
+   ============================================ */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.dashboard-card {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--light-gray);
+}
+
+.card-header i {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--dark);
+}
+
+/* ============================================
+   CARTE PROFIL
+   ============================================ */
+.profile-card {
+    text-align: center;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 1rem;
+    border: 3px solid var(--primary);
+}
+
+.profile-avatar-placeholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    font-size: 2.5rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    border: 3px solid var(--primary);
+}
+
+.user-email, .user-joined {
+    font-size: 0.85rem;
+    color: var(--gray);
+    margin: 0.3rem 0;
+}
+
+.btn-edit-profile {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.6rem 1.2rem;
+    background: var(--light-gray);
+    color: var(--dark);
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: all 0.3s;
+}
+
+.btn-edit-profile:hover {
+    background: var(--primary);
+    color: var(--white);
+}
+
+/* Badges membre */
+.member-badge {
+    margin: 10px 0;
+}
+
+.badge-staff, .badge-regular, .badge-guest {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.badge-staff {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+}
+
+.badge-regular {
+    background: linear-gradient(135deg, #27ae60, #229954);
+    color: white;
+}
+
+.badge-guest {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+}
+
+/* ============================================
+   CARTE MESSAGES
+   ============================================ */
+.messages-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: var(--white);
+}
+
+.messages-card .card-header i,
+.messages-card .card-header h3 {
+    color: var(--white);
+}
+
+.messages-card .card-header {
+    border-bottom-color: rgba(255,255,255,0.2);
+}
+
+.messages-card p {
+    opacity: 0.9;
+    margin-bottom: 1rem;
+}
+
+.messages-stats {
+    margin-bottom: 1rem;
+}
+
+.messages-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.85rem;
+}
+
+.messages-count.has-unread {
+    background: rgba(231,76,60,0.8);
+}
+
+.recent-conversations h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.8;
+}
+
+.recent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.recent-conv {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--white);
+    transition: all 0.3s;
+}
+
+.recent-conv:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateX(5px);
+}
+
+.conv-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.conv-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.conv-info {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.conv-info strong {
+    font-size: 0.9rem;
+}
+
+.conv-time {
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+.empty-message {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.btn-messages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.8rem;
+    background: var(--white);
+    color: #667eea;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.btn-messages:hover {
+    transform: translateY(-2px);
+    gap: 0.8rem;
+}
+
+/* ============================================
+   CARTE ÉVÉNEMENTS
+   ============================================ */
+.events-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.event-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.event-item:last-child {
+    border-bottom: none;
+}
+
+.event-date-badge {
+    text-align: center;
+    min-width: 50px;
+    background: var(--light-gray);
+    border-radius: 10px;
+    padding: 0.4rem;
+}
+
+.event-day {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.event-month {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    color: var(--gray);
+}
+
+.event-details {
+    flex: 1;
+}
+
+.event-details strong {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.event-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.7rem;
+    color: var(--gray);
+    margin-top: 0.25rem;
+}
+
+.view-all {
+    display: inline-block;
+    margin-top: 0.75rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.8rem;
+}
+
+/* ============================================
+   CARTE DONS
+   ============================================ */
+.donations-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.donation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.donation-amount {
+    font-weight: bold;
+    color: var(--success);
+}
+
+.donation-method {
+    font-size: 0.7rem;
+    color: var(--gray);
+    margin-left: 0.5rem;
+}
+
+.donation-date {
+    font-size: 0.7rem;
+    color: var(--gray);
+}
+
+.donation-total {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 2px solid var(--light-gray);
+    font-weight: bold;
+}
+
+.btn-donate-link {
+    display: block;
+    text-align: center;
+    margin-top: 1rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.btn-donate-link:hover {
+    text-decoration: underline;
+}
+
+/* ============================================
+   ACTIONS RAPIDES
+   ============================================ */
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.75rem;
+}
+
+.quick-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.8rem;
+    background: var(--light-gray);
+    border-radius: var(--border-radius-sm);
+    text-decoration: none;
+    color: var(--dark);
+    transition: all 0.3s;
+}
+
+.quick-action i {
+    font-size: 1.2rem;
+    color: var(--primary);
+}
+
+.quick-action span {
+    font-size: 0.7rem;
+}
+
+.quick-action:hover {
+    background: var(--primary);
+    color: var(--white);
+    transform: translateY(-3px);
+}
+
+.quick-action:hover i {
+    color: var(--white);
+}
+
+/* ============================================
+   RESSOURCES
+   ============================================ */
+.resources-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.resource-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--light-gray);
+    border-radius: var(--border-radius-sm);
+    text-decoration: none;
+    color: var(--dark);
+    transition: all 0.3s;
+}
+
+.resource-link i {
+    font-size: 1.3rem;
+    color: var(--primary);
+}
+
+.resource-link div {
+    flex: 1;
+}
+
+.resource-link strong {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.resource-link span {
+    font-size: 0.7rem;
+    color: var(--gray);
+}
+
+.resource-link:hover {
+    background: var(--primary);
+    color: var(--white);
+    transform: translateX(5px);
+}
+
+.resource-link:hover i,
+.resource-link:hover span {
+    color: var(--white);
+}
+
+/* ============================================
+   ZONE DANGEREUSE - SUPPRESSION DE COMPTE
+   ============================================ */
+.danger-zone-card {
+    background: #fef3f2;
+    border: 1px solid #fdeaea;
+}
+
+.danger-zone-content {
+    padding: 0;
+}
+
+.danger-warning {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 12px;
+    border-left: 4px solid #e74c3c;
+}
+
+.danger-warning i {
+    font-size: 1.5rem;
+    color: #e74c3c;
+}
+
+.danger-text {
+    flex: 1;
+}
+
+.danger-text strong {
+    display: block;
+    font-size: 0.9rem;
+    color: #2c3e50;
+}
+
+.danger-text p {
+    font-size: 0.75rem;
+    color: #7f8c8d;
+    margin: 0;
+}
+
+.btn-delete-account {
+    background: #e74c3c;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.btn-delete-account:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   ÉTATS VIDES
+   ============================================ */
+.empty-state {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--gray);
+}
+
+.empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+
+.btn-primary {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--primary);
+    color: var(--white);
+    border-radius: 25px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1024px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .dashboard-grid {
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.4rem;
+    }
+    
+    .quick-actions-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .event-meta {
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+    
+    .danger-warning {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .btn-delete-account {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-container {
+        padding: 0.75rem;
+    }
+    
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .stat-card-mini {
+        padding: 0.75rem;
+    }
+    
+    .stat-number {
+        font-size: 1.2rem;
+    }
+    
+    .stat-label {
+        font-size: 0.6rem;
+    }
+    
+    .dashboard-card {
+        padding: 1rem;
+    }
+    
+    .quick-actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .event-item {
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .event-meta {
+        justify-content: center;
+    }
+    
+    .donation-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.3rem;
+    }
+    
+    .recent-conv {
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .conv-info {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-action {
+        flex-direction: row;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calcul du total des dons
+    const donationTotalSpan = document.getElementById('donationTotal');
+    if (donationTotalSpan) {
+        let total = 0;
+        {% for donation in my_donations %}
+            total += {{ donation.amount|default:0 }};
+        {% endfor %}
+        donationTotalSpan.textContent = total + '€';
+    }
+});
+</script>
+{% endblock %}

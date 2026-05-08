@@ -1,0 +1,783 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block content %}
+<!-- ========== SECTION HERO ========== -->
+<section class="hero-section">
+    <div class="hero-content">
+        <h1>Bienvenue à la <span>Jeunesse Église</span></h1>
+        <p>Grandir ensemble dans la foi, l'amour et le service</p>
+        <div class="hero-buttons">
+            <a href="{% url 'register' %}" class="btn btn-primary btn-large">
+                <i class="bi bi-person-plus-fill"></i> Nous rejoindre
+            </a>
+            <a href="{% url 'events_list' %}" class="btn btn-outline btn-large">
+                <i class="bi bi-calendar-event"></i> Voir les événements
+            </a>
+        </div>
+    </div>
+    <div class="hero-stats">
+        <div class="stat">
+            <span class="stat-number">200+</span>
+            <span class="stat-label">Membres actifs</span>
+        </div>
+        <div class="stat">
+            <span class="stat-number">50+</span>
+            <span class="stat-label">Événements</span>
+        </div>
+        <div class="stat">
+            <span class="stat-number">1000+</span>
+            <span class="stat-label">Vies impactées</span>
+        </div>
+    </div>
+</section>
+
+<!-- ========== PROCHAINS ÉVÉNEMENTS ========== -->
+<section class="events-section">
+    <div class="section-header">
+        <h2><i class="bi bi-calendar-week"></i> Prochains événements</h2>
+        <p>Ne manquez pas nos prochaines activités</p>
+    </div>
+    
+    <div class="events-grid">
+        {% for event in upcoming_events %}
+            <div class="event-card">
+                <div class="event-date">
+                    <span class="day">{{ event.date|date:"d" }}</span>
+                    <span class="month">{{ event.date|date:"M"|upper }}</span>
+                </div>
+                <div class="event-details">
+                    <h3>{{ event.title }}</h3>
+                    <div class="event-meta">
+                        <span><i class="bi bi-clock"></i> {{ event.date|date:"H:i" }}</span>
+                        <span><i class="bi bi-geo-alt"></i> {{ event.location|truncatechars:25 }}</span>
+                    </div>
+                    <a href="{% url 'event_detail' event.id %}" class="event-link">Voir détails →</a>
+                </div>
+            </div>
+        {% empty %}
+            <div class="empty-events">
+                <i class="bi bi-calendar-x"></i>
+                <p>Aucun événement prévu pour le moment</p>
+                <a href="{% url 'events_list' %}" class="btn btn-outline">Voir tous les événements</a>
+            </div>
+        {% endfor %}
+    </div>
+    
+    {% if upcoming_events %}
+        <div class="events-footer">
+            <a href="{% url 'events_list' %}" class="link-all">Voir tous les événements <i class="bi bi-arrow-right"></i></a>
+        </div>
+    {% endif %}
+</section>
+
+<!-- ========== NOS VALEURS ========== -->
+<section class="values-section">
+    <div class="section-header">
+        <h2><i class="bi bi-gem"></i> Nos valeurs fondamentales</h2>
+        <p>Ce qui nous anime et nous guide au quotidien</p>
+    </div>
+    <div class="values-grid">
+        <div class="value-card">
+            <div class="value-icon">🙏</div>
+            <h3>Foi sans compromis</h3>
+            <p>Nous croyons en Dieu et en Sa Parole comme fondement de notre vie.</p>
+        </div>
+        <div class="value-card">
+            <div class="value-icon">❤️</div>
+            <h3>Amour authentique</h3>
+            <p>Nous aimons sans condition, comme Dieu nous a aimés.</p>
+        </div>
+        <div class="value-card">
+            <div class="value-icon">🤝</div>
+            <h3>Service désintéressé</h3>
+            <p>Nous servons notre communauté avec joie et générosité.</p>
+        </div>
+        <div class="value-card">
+            <div class="value-icon">📖</div>
+            <h3>Excellence biblique</h3>
+            <p>Nous étudions la Parole avec rigueur et passion.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ========== TÉMOIGNAGES ========== -->
+<section class="testimonials-section">
+    <div class="section-header">
+        <h2><i class="bi bi-chat-quote"></i> Ce qu'ils disent</h2>
+        <p>Des vies transformées par la puissance de Dieu</p>
+    </div>
+    <div class="testimonials-grid">
+        <div class="testimonial-card">
+            <div class="testimonial-content">
+                <i class="bi bi-quote"></i>
+                <p>Cette communauté a changé ma vie. J'ai trouvé une famille spirituelle qui m'aide à grandir chaque jour.</p>
+            </div>
+            <div class="testimonial-author">
+                <div class="author-avatar">M</div>
+                <div>
+                    <strong>Marie C.</strong>
+                    <span>Membre depuis 2022</span>
+                </div>
+            </div>
+        </div>
+        <div class="testimonial-card">
+            <div class="testimonial-content">
+                <i class="bi bi-quote"></i>
+                <p>Les enseignements sont puissants et pratiques. Je recommande à tous les jeunes de se joindre à nous !</p>
+            </div>
+            <div class="testimonial-author">
+                <div class="author-avatar">J</div>
+                <div>
+                    <strong>Jean D.</strong>
+                    <span>Membre depuis 2021</span>
+                </div>
+            </div>
+        </div>
+        <div class="testimonial-card">
+            <div class="testimonial-content">
+                <i class="bi bi-quote"></i>
+                <p>Les événements sont bien organisés et spirituellement édifiants. Une vraie bénédiction !</p>
+            </div>
+            <div class="testimonial-author">
+                <div class="author-avatar">S</div>
+                <div>
+                    <strong>Sarah K.</strong>
+                    <span>Membre depuis 2023</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section Abonnement WhatsApp -->
+<section class="whatsapp-section">
+    <div class="whatsapp-container">
+        <div class="whatsapp-icon">
+            <i class="bi bi-whatsapp"></i>
+        </div>
+        <h2>Recevez nos actualités sur WhatsApp</h2>
+        <p>Soyez informé des événements, enseignements et prières directement sur votre téléphone</p>
+        
+        <form method="post" action="{% url 'save_phone' %}" class="whatsapp-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <input type="tel" name="phone" placeholder="+243 XX XXX XXXX" required>
+                <input type="text" name="name" placeholder="Votre nom (optionnel)">
+                <button type="submit">
+                    <i class="bi bi-whatsapp"></i> S'abonner
+                </button>
+            </div>
+            <p class="form-note">
+                <i class="bi bi-shield-check"></i> Nous ne partageons jamais vos informations
+            </p>
+        </form>
+        
+        <div class="whatsapp-benefits">
+            <span><i class="bi bi-check-circle-fill"></i> Gratuit</span>
+            <span><i class="bi bi-check-circle-fill"></i> Sécurisé</span>
+            <span><i class="bi bi-check-circle-fill"></i> Désabonnement facile</span>
+        </div>
+    </div>
+</section>
+
+<style>
+/* Section WhatsApp */
+.whatsapp-section {
+    background: linear-gradient(135deg, #075E54, #128C7E);
+    border-radius: 25px;
+    margin: 50px 0;
+    padding: 40px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.whatsapp-container {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.whatsapp-icon {
+    font-size: 3.5rem;
+    margin-bottom: 15px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.whatsapp-container h2 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.whatsapp-container p {
+    margin-bottom: 25px;
+    opacity: 0.9;
+}
+
+.whatsapp-form .form-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.whatsapp-form input {
+    flex: 1;
+    min-width: 200px;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    outline: none;
+    background: white;
+}
+
+.whatsapp-form input:focus {
+    box-shadow: 0 0 0 3px #25D366;
+}
+
+.whatsapp-form button {
+    background: #25D366;
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 50px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.whatsapp-form button:hover {
+    background: #075E54;
+    transform: translateY(-2px);
+}
+
+.form-note {
+    font-size: 0.7rem;
+    margin-top: 15px;
+    opacity: 0.8;
+}
+
+.whatsapp-benefits {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+}
+
+.whatsapp-benefits span {
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.whatsapp-benefits i {
+    font-size: 0.7rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .whatsapp-section {
+        padding: 25px;
+    }
+    
+    .whatsapp-container h2 {
+        font-size: 1.4rem;
+    }
+    
+    .whatsapp-form .form-group {
+        flex-direction: column;
+    }
+    
+    .whatsapp-form input {
+        width: 100%;
+    }
+    
+    .whatsapp-form button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<!-- ========== ACTIVITÉS ========== -->
+<section class="activities-section">
+    <div class="section-header">
+        <h2><i class="bi bi-stars"></i> Nos activités</h2>
+        <p>Des moments forts pour grandir ensemble</p>
+    </div>
+    <div class="activities-grid">
+        <div class="activity-card">
+            <div class="activity-icon">🎵</div>
+            <h3>Louange & Adoration</h3>
+            <p>Tous les samedis à 16h</p>
+        </div>
+        <div class="activity-card">
+            <div class="activity-icon">📖</div>
+            <h3>Étude Biblique</h3>
+            <p>Tous les mercredis à 17h</p>
+        </div>
+        <div class="activity-card">
+            <div class="activity-icon">🙏</div>
+            <h3>Veillée de Prière</h3>
+            <p>1er vendredi du mois à 19h</p>
+        </div>
+        <div class="activity-card">
+            <div class="activity-icon">🎤</div>
+            <h3>Répétition Chorale</h3>
+            <p>Tous les vendredis à 18h</p>
+        </div>
+    </div>
+</section>
+
+<!-- ========== COMPTEUR À REBOURS POUR LE PROCHAIN ÉVÉNEMENT ========== -->
+{% if upcoming_events %}
+<section class="countdown-section">
+    <div class="countdown-content">
+        <h3><i class="bi bi-hourglass-split"></i> Prochain événement dans</h3>
+        <div class="countdown-timer" id="countdownTimer">
+            <div class="countdown-box">
+                <span class="countdown-number" id="days">00</span>
+                <span class="countdown-label">Jours</span>
+            </div>
+            <div class="countdown-box">
+                <span class="countdown-number" id="hours">00</span>
+                <span class="countdown-label">Heures</span>
+            </div>
+            <div class="countdown-box">
+                <span class="countdown-number" id="minutes">00</span>
+                <span class="countdown-label">Minutes</span>
+            </div>
+            <div class="countdown-box">
+                <span class="countdown-number" id="seconds">00</span>
+                <span class="countdown-label">Secondes</span>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ========== APPEL À L'ACTION FINAL ========== -->
+<section class="final-cta-section">
+    <div class="final-cta-content">
+        <h2>Prêt à rejoindre notre communauté ?</h2>
+        <p>Inscrivez-vous dès maintenant pour participer aux événements, recevoir nos enseignements et grandir spirituellement.</p>
+        <div class="final-cta-buttons">
+            <a href="{% url 'register' %}" class="btn btn-primary btn-large">
+                <i class="bi bi-person-plus-fill"></i> S'inscrire maintenant
+            </a>
+            <a href="{% url 'contact' %}" class="btn btn-outline btn-large">
+                <i class="bi bi-envelope"></i> Nous contacter
+            </a>
+        </div>
+    </div>
+</section>
+
+<style>
+/* ========== HERO SECTION ========== */
+.hero-section {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-radius: var(--radius-lg);
+    padding: 4rem 3rem;
+    margin-bottom: 3rem;
+    text-align: center;
+    color: white;
+}
+
+.hero-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.hero-content h1 span {
+    color: var(--secondary);
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 2rem;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2.5rem;
+}
+
+.btn-large {
+    padding: 0.9rem 2rem;
+    font-size: 1rem;
+}
+
+.hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    flex-wrap: wrap;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--secondary);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* ========== SECTIONS GÉNÉRALES ========== */
+.section-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.section-header h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.section-header p {
+    color: var(--gray);
+}
+
+/* ========== VALEURS ========== */
+.values-section {
+    margin-bottom: 3rem;
+}
+
+.values-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.value-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.value-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.value-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.value-card h3 {
+    margin-bottom: 0.5rem;
+}
+
+.value-card p {
+    color: var(--gray);
+    font-size: 0.9rem;
+}
+
+/* ========== TÉMOIGNAGES ========== */
+.testimonials-section {
+    margin-bottom: 3rem;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+}
+
+.testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.testimonial-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.testimonial-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.testimonial-content i {
+    font-size: 2rem;
+    color: var(--secondary);
+    opacity: 0.5;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.testimonial-content p {
+    font-style: italic;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.author-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.testimonial-author strong {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.testimonial-author span {
+    font-size: 0.7rem;
+    color: var(--gray);
+}
+
+/* ========== ACTIVITÉS ========== */
+.activities-section {
+    margin-bottom: 3rem;
+}
+
+.activities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.activity-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.activity-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.activity-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.activity-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.3rem;
+}
+
+.activity-card p {
+    font-size: 0.8rem;
+    color: var(--gray);
+}
+
+/* ========== COMPTEUR ========== */
+.countdown-section {
+    background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 3rem;
+    text-align: center;
+    color: white;
+}
+
+.countdown-content h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.countdown-timer {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.countdown-box {
+    background: rgba(255,255,255,0.2);
+    border-radius: var(--radius);
+    padding: 1rem 1.5rem;
+    min-width: 80px;
+    text-align: center;
+}
+
+.countdown-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.countdown-label {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+/* ========== APPEL À L'ACTION FINAL ========== */
+.final-cta-section {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+    text-align: center;
+    color: white;
+}
+
+.final-cta-content h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.final-cta-content p {
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.final-cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 2rem 1.5rem;
+    }
+    
+    .hero-content h1 {
+        font-size: 1.8rem;
+    }
+    
+    .hero-stats {
+        gap: 1.5rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .section-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .testimonials-section {
+        padding: 1.5rem;
+    }
+    
+    .countdown-timer {
+        gap: 0.5rem;
+    }
+    
+    .countdown-box {
+        padding: 0.8rem 1rem;
+        min-width: 65px;
+    }
+    
+    .countdown-number {
+        font-size: 1.5rem;
+    }
+    
+    .final-cta-section {
+        padding: 2rem;
+    }
+    
+    .final-cta-content h2 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-stats {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .countdown-timer {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .final-cta-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .final-cta-buttons .btn {
+        width: 100%;
+        max-width: 250px;
+    }
+}
+</style>
+
+<script>
+// Compte à rebours
+{% if upcoming_events %}
+function updateCountdown() {
+    const firstEvent = {{ upcoming_events.0.date|date:"U" }};
+    const eventDate = new Date(firstEvent * 1000);
+    const now = new Date();
+    const diff = eventDate - now;
+    
+    if (diff > 0) {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (86400000)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (3600000)) / (1000 * 60));
+        const seconds = Math.floor((diff % (60000)) / 1000);
+        
+        document.getElementById('days').textContent = days.toString().padStart(2, '0');
+        document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+        document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+        document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+    }
+}
+
+setInterval(updateCountdown, 1000);
+updateCountdown();
+{% endif %}
+</script>
+{% endblock %}
