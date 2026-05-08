@@ -120,27 +120,31 @@
                 <div class="form-group">
                     <label>Je suis <span class="required">*</span></label>
                     <select name="member_type" id="id_member_type" class="form-control" required>
-                        <option value="guest" {% if form.member_type.value == 'guest' %}selected{% endif %}>Invité / Visiteur</option>
-                        <option value="regular" {% if form.member_type.value == 'regular' %}selected{% endif %}>Membre régulier</option>
-                        <option value="staff" {% if form.member_type.value == 'staff' %}selected{% endif %}>Membre du staff</option>
+                        <option value="guest" {% if form.member_type.value == 'guest' %}selected{% endif %}>👤 Invité</option>
+                        <option value="regular" {% if form.member_type.value == 'regular' %}selected{% endif %}>🙏 Jeune de l'église</option>
+                        <option value="staff" {% if form.member_type.value == 'staff' %}selected{% endif %}>👑 Membre du Staff</option>
                     </select>
                 </div>
 
+                <!-- Département (visible uniquement pour staff) -->
                 <div class="form-group department-group" id="departmentGroup" style="display: none;">
-                    <label>Département</label>
+                    <label>Département <span class="required">*</span></label>
                     <select name="department" id="id_department" class="form-control">
-                        <option value="">Sélectionnez un département</option>
-                        <option value="worship" {% if form.department.value == 'worship' %}selected{% endif %}>Louange et Adoration</option>
-                        <option value="teaching" {% if form.department.value == 'teaching' %}selected{% endif %}>Enseignement</option>
-                        <option value="evangelism" {% if form.department.value == 'evangelism' %}selected{% endif %}>Évangélisation</option>
-                        <option value="social" {% if form.department.value == 'social' %}selected{% endif %}>Action sociale</option>
-                        <option value="technical" {% if form.department.value == 'technical' %}selected{% endif %}>Technique et Média</option>
-                        <option value="youth" {% if form.department.value == 'youth' %}selected{% endif %}>Jeunesse</option>
-                        <option value="women" {% if form.department.value == 'women' %}selected{% endif %}>Femmes</option>
-                        <option value="men" {% if form.department.value == 'men' %}selected{% endif %}>Hommes</option>
+                        <option value="">Sélectionnez votre département</option>
+                        <option value="coordination" {% if form.department.value == 'coordination' %}selected{% endif %}>🎯 Coordination</option>
+                        <option value="evangelisation" {% if form.department.value == 'evangelisation' %}selected{% endif %}>📢 Évangélisation</option>
+                        <option value="louange" {% if form.department.value == 'louange' %}selected{% endif %}>🎵 Louange</option>
+                        <option value="enseignement" {% if form.department.value == 'enseignement' %}selected{% endif %}>📖 Enseignement</option>
+                        <option value="technique" {% if form.department.value == 'technique' %}selected{% endif %}>💻 Technique / Médias</option>
+                        <option value="communication" {% if form.department.value == 'communication' %}selected{% endif %}>📱 Communication</option>
+                        <option value="accueil" {% if form.department.value == 'accueil' %}selected{% endif %}>🤝 Accueil</option>
+                        <option value="priere" {% if form.department.value == 'priere' %}selected{% endif %}>🙏 Prière</option>
+                        <option value="social" {% if form.department.value == 'social' %}selected{% endif %}>❤️ Action sociale</option>
                     </select>
+                    <small>Sélectionnez votre département au sein du staff</small>
                 </div>
 
+                <!-- Membre régulier -->
                 <div class="form-group regular-group" id="regularGroup" style="display: none;">
                     <label class="checkbox-label">
                         <input type="checkbox" name="is_regular_member" id="id_is_regular_member" 
@@ -425,7 +429,7 @@
     
     .form-group input, .form-group select {
         padding: 10px;
-        font-size: 16px; /* Empêche le zoom sur iOS */
+        font-size: 16px;
     }
     
     .btn-register {
@@ -433,7 +437,6 @@
     }
 }
 
-/* Éviter le zoom sur iOS */
 @media (max-width: 768px) {
     input, select, textarea {
         font-size: 16px !important;
@@ -458,20 +461,33 @@
         const selectedType = memberTypeSelect.value;
         
         if (selectedType === 'staff') {
-            if (departmentGroup) departmentGroup.style.display = 'block';
+            if (departmentGroup) {
+                departmentGroup.style.display = 'block';
+                // Rendre le champ département requis pour staff
+                const deptSelect = document.getElementById('id_department');
+                if (deptSelect) deptSelect.required = true;
+            }
             if (regularGroup) regularGroup.style.display = 'none';
         } else if (selectedType === 'regular') {
-            if (departmentGroup) departmentGroup.style.display = 'none';
+            if (departmentGroup) {
+                departmentGroup.style.display = 'none';
+                const deptSelect = document.getElementById('id_department');
+                if (deptSelect) deptSelect.required = false;
+            }
             if (regularGroup) regularGroup.style.display = 'block';
         } else {
-            if (departmentGroup) departmentGroup.style.display = 'none';
+            if (departmentGroup) {
+                departmentGroup.style.display = 'none';
+                const deptSelect = document.getElementById('id_department');
+                if (deptSelect) deptSelect.required = false;
+            }
             if (regularGroup) regularGroup.style.display = 'none';
         }
     }
     
     if (memberTypeSelect) {
         memberTypeSelect.addEventListener('change', toggleFields);
-        toggleFields();
+        toggleFields(); // Appel initial
     }
     
     // Validation du formulaire avant soumission
@@ -508,6 +524,18 @@
                 alert('Veuillez entrer une adresse email valide !');
                 email.focus();
                 return false;
+            }
+            
+            // Vérifier le département pour staff
+            const memberType = memberTypeSelect ? memberTypeSelect.value : '';
+            if (memberType === 'staff') {
+                const department = document.getElementById('id_department');
+                if (department && !department.value) {
+                    e.preventDefault();
+                    alert('Veuillez sélectionner votre département !');
+                    department.focus();
+                    return false;
+                }
             }
             
             // Vérifier les conditions
