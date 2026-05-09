@@ -631,7 +631,8 @@
             <ul class="nav-menu" id="navMenu">
                 <li><a href="{% url 'home' %}" class="nav-link"><i class="bi bi-house-door"></i> Accueil</a></li>
                 <li><a href="{% url 'about' %}" class="nav-link"><i class="bi bi-info-circle"></i> À propos</a></li>
-                <li><a href="{% url 'events_list' %}" class="nav-link"><i class="bi bi-calendar-event"></i> Événements</a></li>
+                <!-- ✅ CORRECTION UNIQUE : events:events_list au lieu de events_list -->
+                <li><a href="{% url 'events:events_list' %}" class="nav-link"><i class="bi bi-calendar-event"></i> Événements</a></li>
                 <li><a href="{% url 'teachings' %}" class="nav-link"><i class="bi bi-headphones"></i> Enseignements</a></li>
                 <li><a href="{% url 'blog' %}" class="nav-link"><i class="bi bi-pencil-square"></i> Blog</a></li>
                 <li><a href="{% url 'gallery' %}" class="nav-link"><i class="bi bi-images"></i> Galerie</a></li>
