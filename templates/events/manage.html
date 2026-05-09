@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Gestion des événements - Admin{% endblock %}
+
+{% block content %}
+<div class="manage-page">
+    <div class="manage-header">
+        <h1><i class="bi bi-gear-fill"></i> Gestion des événements</h1>
+        <a href="{% url 'add_event' %}" class="btn-add">
+            <i class="bi bi-plus-circle"></i> Nouvel événement
+        </a>
+        <a href="{% url 'events_list' %}" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Retour
+        </a>
+    </div>
+    
+    {% if events %}
+    <div class="table-responsive">
+        <table class="manage-table">
+            <thead>
+                <tr>
+                    <th>Titre</th>
+                    <th>Date</th>
+                    <th>Lieu</th>
+                    <th>Places</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                <tr class="{% if event.is_featured %}featured-row{% endif %}">
+                    <td>
+                        <strong>{{ event.title }}</strong>
+                        {% if event.is_featured %}
+                            <span class="featured-badge">⭐ À la une</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ event.date|date:"d/m/Y H:i" }}</td>
+                    <td>{{ event.location|truncatechars:30 }}</td>
+                    <td>
+                        {% if event.max_participants == 0 %}
+                            Illimité
+                        {% else %}
+                            {{ event.participants.count }}/{{ event.max_participants }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if event.status == 'upcoming' %}
+                            <span class="badge-upcoming">À venir</span>
+                        {% elif event.status == 'ongoing' %}
+                            <span class="badge-ongoing">En cours</span>
+                        {% else %}
+                            <span class="badge-past">Passé</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{% url 'event_detail' event.id %}" class="btn-view" title="Voir">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="#" class="btn-delete" title="Supprimer"
+                           onclick="if(confirm('Supprimer {{ event.title }} ?')) document.getElementById('delete-form-{{ event.id }}').submit();">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                        <form id="delete-form-{{ event.id }}" method="POST" action="{% url 'event_delete' event.id %}" style="display: none;">
+                            {% csrf_token %}
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="no-events">
+        <i class="bi bi-calendar-x"></i>
+        <h3>Aucun événement</h3>
+        <p>Commencez par créer votre premier événement !</p>
+        <a href="{% url 'add_event' %}" class="btn-add-first">
+            <i class="bi bi-plus-circle"></i> Créer un événement
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.manage-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.manage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.btn-add, .btn-back {
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-add {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-add:hover, .btn-back:hover {
+    transform: translateY(-2px);
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.manage-table {
+    width: 100%;
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.manage-table th {
+    background: #1e3a5f;
+    color: white;
+    padding: 15px;
+    text-align: left;
+}
+
+.manage-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.manage-table tr:hover {
+    background: #f8f9fa;
+}
+
+.featured-row {
+    background: #fff8e7;
+}
+
+.featured-badge {
+    display: inline-block;
+    background: #f39c12;
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+}
+
+.badge-upcoming {
+    background: #3498db;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 0.7rem;
+}
+
+.badge-ongoing {
+    background: #e74c3c;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    animation: pulse 1.5s infinite;
+}
+
+.badge-past {
+    background: #95a5a6;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 0.7rem;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-view, .btn-delete {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-view {
+    background: #3498db;
+    color: white;
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-view:hover, .btn-delete:hover {
+    transform: scale(1.1);
+}
+
+.no-events {
+    text-align: center;
+    padding: 4rem;
+    background: white;
+    border-radius: 20px;
+}
+
+.no-events i {
+    font-size: 4rem;
+    color: #bdc3c7;
+}
+
+.btn-add-first {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 1rem;
+    background: #27ae60;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    text-decoration: none;
+}
+
+@media (max-width: 768px) {
+    .manage-page {
+        padding: 15px;
+    }
+    
+    .manage-table th,
+    .manage-table td {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+    }
+    
+    .actions {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+</style>
+{% endblock %}
