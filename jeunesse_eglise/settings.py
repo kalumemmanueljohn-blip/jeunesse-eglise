@@ -1,14 +1,30 @@
 from pathlib import Path
 import os
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-change-this-in-production-123456789'
+# ============================================
+# SÉCURITÉ - UTILISATION DES VARIABLES D'ENVIRONNEMENT
+# ============================================
 
-DEBUG = True
+# Pour Render, utilisez les variables d'environnement
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-change-this-in-production-123456789')
 
-ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://jmc-Cité-bethel-bandal-mouleart.onrender.com']
+# DEBUG doit être False en production sur Render
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+
+ALLOWED_HOSTS = [
+    '.onrender.com',  # Tous les sous-domaines onrender.com
+    'localhost', 
+    '127.0.0.1',
+    'jeunesse-eglise.onrender.com',  # Votre domaine spécifique
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://jeunesse-eglise.onrender.com',
+    'https://*.onrender.com',
+]
 
 # ============================================
 # APPLICATIONS INSTALLÉES
@@ -22,6 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+    # Third-party apps (pour Render)
+    'whitenoise.runserver_nostatic',  # Pour les fichiers statiques
+    'channels',  # WebSocket
+    
     # Applications du projet
     'core',
     'accounts',
@@ -30,50 +50,16 @@ INSTALLED_APPS = [
     'blog',
     'donations',
     'gallery',
-    'chat',  # ⚠️ AJOUTER L'APPLICATION CHAT
-    
-    # Pour WebSocket (optionnel mais recommandé)
-    'channels',
+    'chat',
 ]
 
-ROOT_URLCONF = 'jeunesse_eglise.urls'   # ← LIGNE MANQUANTE
-
 # ============================================
-# CHANNELS / WEBSOCKET (pour messages temps réel)
+# MIDDLEWARE (AVEC WHITENOISE)
 # ============================================
-
-# Définir l'application ASGI pour les WebSockets
-ASGI_APPLICATION = 'jeunesse_eglise.asgi.application'
-
-# Configuration des channel layers
-# Pour développement: utilise InMemoryChannelLayer
-# Pour production: utilise Redis
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-        # Pour production, décommentez et configurez Redis:
-        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        # 'CONFIG': {
-        #     "hosts": [('127.0.0.1', 6379)],
-        # },
-    },
-}
-
-# ============================================
-# MIDDLEWARE
-# ============================================
-
-# Activer le fuseau horaire
-USE_TZ = True
-
-# Définir le fuseau horaire de Kinshasa (RDC)
-TIME_ZONE = 'Africa/Kinshasa'
-
-# Langue française
-LANGUAGE_CODE = 'fr-fr'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # IMPORTANT pour les fichiers statiques
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -83,7 +69,13 @@ MIDDLEWARE = [
 ]
 
 # ============================================
-# TEMPLATES - CONTEXT PROCESSORS
+# ROOT URLCONF
+# ============================================
+
+ROOT_URLCONF = 'jeunesse_eglise.urls'
+
+# ============================================
+# TEMPLATES
 # ============================================
 
 TEMPLATES = [
@@ -97,12 +89,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'chat.context_processors.unread_messages_count',
             ],
-            # ⚠️ COMMENTE OU SUPPRIME LA PARTIE LIBRARIES
-            # 'libraries': {
-            #     'chat_extras': 'chat.templatetags.chat_extras',
-            # },
         },
     },
 ]
@@ -116,60 +103,80 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'home'
 
 # ============================================
+# DATABASE - Configuration pour Render
+# ============================================
+
+# Utilise PostgreSQL sur Render, SQLite en local
+DATABASES = {
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        conn_max_age=600
+    )
+}
+
+# ============================================
+# CHANNELS / WEBSOCKET
+# ============================================
+
+ASGI_APPLICATION = 'jeunesse_eglise.asgi.application'
+
+# Configuration Redis (à ajouter sur Render)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        # Pour production avec Redis (sur Render, ajoutez Redis)
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        # 'CONFIG': {
+        #     "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
+        # },
+    },
+}
+
+# ============================================
 # FICHIERS STATIQUES ET MÉDIAS
 # ============================================
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
-STATIC_URL = '/static/'
-STATIC_ROOT = '/opt/render/project/src/staticfiles'  # 👈 Ajoutez cette ligne
-
+# WhiteNoise configuration
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # ============================================
-# SÉCURITÉ POUR LES FICHIERS
+# INTERNATIONALISATION
+# ============================================
+
+USE_TZ = True
+TIME_ZONE = 'Africa/Kinshasa'
+LANGUAGE_CODE = 'fr-fr'
+USE_I18N = True
+USE_L10N = True
+
+# ============================================
+# UPLOAD DE FICHIERS
 # ============================================
 
 # Augmenter la limite à 50MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
-
-# Pour les très gros fichiers (100MB+)
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',  # ← Vérifie que cette ligne existe
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-# Configuration pour l'upload de fichiers
 FILE_UPLOAD_HANDLERS = [
     'django.core.files.uploadhandler.MemoryFileUploadHandler',
     'django.core.files.uploadhandler.TemporaryFileUploadHandler',
 ]
 
-# Augmenter la limite à 50MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
-FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
-
-# Pour les très gros fichiers (100MB+)
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 # ============================================
 # MESSAGERIE - CONFIGURATION DU CHAT
 # ============================================
 
-# Temps d'attente pour l'indicateur de saisie (en secondes)
 CHAT_TYPING_TIMEOUT = 3
-
-# Nombre maximum de fichiers par message
 CHAT_MAX_FILES_PER_MESSAGE = 5
 
-# Types de fichiers autorisés dans le chat
 CHAT_ALLOWED_FILE_TYPES = {
     'image': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'],
     'video': ['.mp4', '.mov', '.avi', '.mkv', '.webm'],
@@ -177,43 +184,57 @@ CHAT_ALLOWED_FILE_TYPES = {
     'document': ['.pdf', '.doc', '.docx', '.txt', '.rtf', '.xls', '.xlsx', '.ppt', '.pptx'],
 }
 
-# Taille maximale par type de fichier (en bytes)
 CHAT_MAX_FILE_SIZES = {
     'image': 5 * 1024 * 1024,    # 5 MB
     'video': 20 * 1024 * 1024,   # 20 MB
     'audio': 10 * 1024 * 1024,   # 10 MB
     'document': 10 * 1024 * 1024, # 10 MB
-    'default': 10 * 1024 * 1024,  # 10 MB
+    'default': 10 * 1024 * 1024,
 }
 
-# Nombre maximal de messages à charger par pagination
 CHAT_MESSAGES_PER_PAGE = 50
-
-# Nombre maximal de conversations à afficher
 CHAT_MAX_CONVERSATIONS = 50
+CHAT_AUTO_MODERATION_DELAY = 0
+CHAT_FILTERED_WORDS = []
 
 # ============================================
-# SÉCURITÉ POUR LE CHAT
-# ============================================
-
-# Délai de modération automatique des messages
-CHAT_AUTO_MODERATION_DELAY = 0  # 0 = désactivé, sinon en secondes
-
-# Mots interdits (auto-modération)
-CHAT_FILTERED_WORDS = [
-    # Liste des mots à filtrer (optionnel)
-]
-
-# ============================================
-# FICHIERS STATIQUES (pour production)
+# SÉCURITÉ POUR LA PRODUCTION
 # ============================================
 
 if not DEBUG:
-    STATIC_ROOT = BASE_DIR / 'staticfiles'
-    MEDIA_ROOT = BASE_DIR / 'mediafiles'
-    
     # Sécurité supplémentaire pour les médias
     X_FRAME_OPTIONS = 'DENY'
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-DEBUG = True  # ← Doit être True pour voir l'erreur détaillée
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = 31536000  # 1 an
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# ============================================
+# LOGGING (pour debug sur Render)
+# ============================================
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
+        },
+    },
+}
