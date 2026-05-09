@@ -2,12 +2,30 @@ services:
   - type: web
     name: jeunesse-eglise
     runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: daphne -b 0.0.0.0 -p $PORT jeunesse_eglise.asgi:application
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate
+      python create_admin.py || echo "Admin already exists"
+    startCommand: gunicorn jeunesse_eglise.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 10000
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: DJANGO_DEBUG
         value: "False"
+      - key: DJANGO_SETTINGS_MODULE
+        value: "jeunesse_eglise.settings"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jeunesse-eglise-db
+          property: connectionString
 
-  
+  # Base de données PostgreSQL (optionnelle)
+  - type: postgresql
+    name: jeunesse-eglise-db
+    plan: free
