@@ -17,13 +17,13 @@ from django.contrib.contenttypes.models import ContentType
 
 User = get_user_model()
 
+# Définir les variables globales
+ADMIN_USERNAME = 'admin'
+ADMIN_EMAIL = 'admin@exemple.com'
+ADMIN_PASSWORD = 'admin123'  # Changez ce mot de passe après la première connexion
+
 def create_admin_user():
     """Crée un administrateur avec tous les droits"""
-    
-    # Informations de l'administrateur
-    ADMIN_USERNAME = 'admin'
-    ADMIN_EMAIL = 'admin@exemple.com'
-    ADMIN_PASSWORD = 'admin123'
     
     print("="*60)
     print("🔧 CRÉATION DE L'ADMINISTRATEUR PRINCIPAL")
