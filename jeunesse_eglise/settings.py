@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-change-this-in-production-123456789')
 
 # DEBUG doit être False en production sur Render
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+DJANGO_DEBUG = True
 
 ALLOWED_HOSTS = [
     '.onrender.com',  # Tous les sous-domaines onrender.com
