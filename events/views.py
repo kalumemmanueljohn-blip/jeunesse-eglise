@@ -34,25 +34,14 @@ def register_event(request, id):
     messages.success(request, f"✅ Vous êtes inscrit à {event.title} !")
     return redirect('dashboard')
 
-@login_required
-def delete_event(request, id):
-    """Supprimer un événement (admin uniquement)"""
-    if not request.user.is_staff and not request.user.is_superuser:
-        messages.error(request, "Vous n'avez pas les droits pour supprimer un événement.")
-        return redirect('events_list')
-    
-    event = get_object_or_404(Event, id=id)
-    title = event.title
-    event.delete()
-    messages.success(request, f'✅ Événement "{title}" supprimé avec succès !')
-    return redirect('events_list')
+# ========== VUES ADMINISTRATION ==========
 
 @login_required
 def add_event(request):
     """Ajouter un événement (admin uniquement)"""
-    # Vérifier les droits
-    if not request.user.is_staff and not request.user.is_superuser:
-        messages.error(request, "Vous n'avez pas les droits pour ajouter un événement.")
+    # Vérifier les droits - SEUL SUPERUSER
+    if not request.user.is_superuser:
+        messages.error(request, "⛔ Vous n'avez pas les droits pour ajouter un événement.")
         return redirect('events_list')
     
     if request.method == 'POST':
@@ -90,17 +79,60 @@ def add_event(request):
     return render(request, 'events/add_event.html')
 
 @login_required
-def register_event(request, id):
+def event_edit(request, id):
+    """Modifier un événement (admin uniquement)"""
+    # Vérifier les droits - SEUL SUPERUSER
+    if not request.user.is_superuser:
+        messages.error(request, "⛔ Vous n'avez pas les droits pour modifier un événement.")
+        return redirect('events_list')
+    
     event = get_object_or_404(Event, id=id)
     
-    if Participant.objects.filter(event=event, user=request.user).exists():
-        messages.warning(request, "Vous êtes déjà inscrit à cet événement.")
+    if request.method == 'POST':
+        # Récupérer les données
+        event.title = request.POST.get('title')
+        event.description = request.POST.get('description')
+        date_str = request.POST.get('date')
+        if date_str:
+            event.date = date_str
+        event.location = request.POST.get('location')
+        event.location_link = request.POST.get('location_link')
+        
+        if request.FILES.get('image'):
+            event.image = request.FILES.get('image')
+        
+        event.max_participants = int(request.POST.get('max_participants', 0)) if request.POST.get('max_participants') else 0
+        event.status = request.POST.get('status', 'upcoming')
+        event.is_featured = request.POST.get('is_featured') == 'on'
+        
+        event.save()
+        
+        messages.success(request, f'✅ Événement "{event.title}" modifié avec succès !')
         return redirect('event_detail', id=event.id)
     
-    if event.is_full():
-        messages.error(request, "Désolé, cet événement est complet.")
-        return redirect('event_detail', id=event.id)
+    return render(request, 'events/edit_event.html', {'event': event})
+
+@login_required
+def delete_event(request, id):
+    """Supprimer un événement (admin uniquement)"""
+    # Vérifier les droits - SEUL SUPERUSER
+    if not request.user.is_superuser:
+        messages.error(request, "⛔ Vous n'avez pas les droits pour supprimer un événement.")
+        return redirect('events_list')
     
-    Participant.objects.create(event=event, user=request.user)
-    messages.success(request, f"✅ Vous êtes inscrit à {event.title} !")
-    return redirect('dashboard')
+    event = get_object_or_404(Event, id=id)
+    title = event.title
+    event.delete()
+    messages.success(request, f'✅ Événement "{title}" supprimé avec succès !')
+    return redirect('events_list')
+
+@login_required
+def events_manage(request):
+    """Page de gestion des événements (admin uniquement)"""
+    # Vérifier les droits - SEUL SUPERUSER
+    if not request.user.is_superuser:
+        messages.error(request, "⛔ Accès réservé à l'administrateur!")
+        return redirect('events_list')
+    
+    events = Event.objects.all().order_by('-date')
+    return render(request, 'events/manage.html', {'events': events})
