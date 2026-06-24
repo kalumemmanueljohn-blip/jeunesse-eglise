@@ -38,8 +38,7 @@ INSTALLED_APPS = [
     # Third-party apps
     'whitenoise.runserver_nostatic',
     'channels',
-    'storages',  # ⭐ Pour Supabase Storage
-    'imagekit',  # Pour le traitement d'images
+    'imagekit',
     
     # Applications du projet
     'core',
@@ -121,49 +120,15 @@ CHANNEL_LAYERS = {
 }
 
 # ============================================
-# STOCKAGE DES FICHIERS - SUPABASE STORAGE
+# STOCKAGE DES FICHIERS - LOCAL SUR RENDER
 # ============================================
 
-# Détection de l'environnement
-IS_RENDER = 'RENDER' in os.environ
+# Stockage local pour Render et développement
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
-if IS_RENDER:
-    # ⭐ SUPABASE STORAGE EN PRODUCTION
-    SUPABASE_URL = os.environ.get('SUPABASE_URL')
-    SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_KEY') or os.environ.get('SUPABASE_ANON_KEY')
-    SUPABASE_BUCKET = os.environ.get('SUPABASE_BUCKET', 'media')
-    
-    if SUPABASE_URL and SUPABASE_KEY:
-        print(f"☁️  Supabase Storage configuré: {SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/")
-        
-        # Configuration du stockage Supabase
-        DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-        
-        # Configuration S3 compatible avec Supabase
-        AWS_ACCESS_KEY_ID = os.environ.get('SUPABASE_ACCESS_KEY_ID', '')
-        AWS_SECRET_ACCESS_KEY = os.environ.get('SUPABASE_SECRET_ACCESS_KEY', '')
-        AWS_STORAGE_BUCKET_NAME = SUPABASE_BUCKET
-        AWS_S3_ENDPOINT_URL = f"{SUPABASE_URL}/storage/v1/s3"
-        AWS_S3_REGION_NAME = os.environ.get('SUPABASE_REGION', 'us-east-1')
-        AWS_S3_USE_SSL = True
-        AWS_S3_VERIFY = True
-        AWS_QUERYSTRING_AUTH = False  # Désactiver l'authentification dans les URLs
-        AWS_DEFAULT_ACL = 'public-read'
-        
-        # Personnalisation des URLs
-        MEDIA_URL = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/"
-        
-        print(f"🌐 MEDIA_URL: {MEDIA_URL}")
-    else:
-        print("⚠️  Supabase Storage non configuré, utilisation du stockage local")
-        DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-        MEDIA_URL = '/media/'
-        MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-else:
-    # 📁 STOCKAGE LOCAL EN DÉVELOPPEMENT
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Configuration des médias
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # ============================================
 # FICHIERS STATIQUES
@@ -173,8 +138,8 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
-if IS_RENDER:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# WhiteNoise pour servir les fichiers statiques
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ============================================
 # INTERNATIONALISATION
@@ -190,8 +155,8 @@ USE_L10N = True
 # UPLOAD DE FICHIERS
 # ============================================
 
-DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800
-FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
 FILE_UPLOAD_HANDLERS = [
@@ -227,10 +192,10 @@ CHAT_AUTO_MODERATION_DELAY = 0
 CHAT_FILTERED_WORDS = []
 
 # ============================================
-# SÉCURITÉ
+# SÉCURITÉ POUR LA PRODUCTION
 # ============================================
 
-if not DEBUG and IS_RENDER:
+if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -263,4 +228,4 @@ LOGGING = {
             'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
         },
     },
-    }
+}
