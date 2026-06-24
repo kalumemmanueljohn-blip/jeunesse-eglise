@@ -8,17 +8,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SÉCURITÉ - UTILISATION DES VARIABLES D'ENVIRONNEMENT
 # ============================================
 
-# Pour Render, utilisez les variables d'environnement
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-change-this-in-production-123456789')
-
-# DEBUG doit être False en production sur Render
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = [
-    '.onrender.com',  # Tous les sous-domaines onrender.com
+    '.onrender.com',
     'localhost', 
     '127.0.0.1',
-    'jeunesse-eglise.onrender.com',  # Votre domaine spécifique
+    'jeunesse-eglise.onrender.com',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -38,9 +35,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # Third-party apps (pour Render)
-    'whitenoise.runserver_nostatic',  # Pour les fichiers statiques
-    'channels',  # WebSocket
+    # Third-party apps
+    'whitenoise.runserver_nostatic',
+    'channels',
+    'storages',  # ⭐ Pour Supabase Storage
+    'imagekit',  # Pour le traitement d'images
     
     # Applications du projet
     'core',
@@ -54,12 +53,12 @@ INSTALLED_APPS = [
 ]
 
 # ============================================
-# MIDDLEWARE (AVEC WHITENOISE)
+# MIDDLEWARE
 # ============================================
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # IMPORTANT pour les fichiers statiques
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -67,10 +66,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-# ============================================
-# ROOT URLCONF
-# ============================================
 
 ROOT_URLCONF = 'jeunesse_eglise.urls'
 
@@ -103,10 +98,9 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'home'
 
 # ============================================
-# DATABASE - Configuration pour Render
+# DATABASE
 # ============================================
 
-# Utilise PostgreSQL sur Render, SQLite en local
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
@@ -120,31 +114,67 @@ DATABASES = {
 
 ASGI_APPLICATION = 'jeunesse_eglise.asgi.application'
 
-# Configuration Redis (à ajouter sur Render)
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels.layers.InMemoryChannelLayer',
-        # Pour production avec Redis (sur Render, ajoutez Redis)
-        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        # 'CONFIG': {
-        #     "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
-        # },
     },
 }
 
 # ============================================
-# FICHIERS STATIQUES ET MÉDIAS
+# STOCKAGE DES FICHIERS - SUPABASE STORAGE
+# ============================================
+
+# Détection de l'environnement
+IS_RENDER = 'RENDER' in os.environ
+
+if IS_RENDER:
+    # ⭐ SUPABASE STORAGE EN PRODUCTION
+    SUPABASE_URL = os.environ.get('SUPABASE_URL')
+    SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_KEY') or os.environ.get('SUPABASE_ANON_KEY')
+    SUPABASE_BUCKET = os.environ.get('SUPABASE_BUCKET', 'media')
+    
+    if SUPABASE_URL and SUPABASE_KEY:
+        print(f"☁️  Supabase Storage configuré: {SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/")
+        
+        # Configuration du stockage Supabase
+        DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+        
+        # Configuration S3 compatible avec Supabase
+        AWS_ACCESS_KEY_ID = os.environ.get('SUPABASE_ACCESS_KEY_ID', '')
+        AWS_SECRET_ACCESS_KEY = os.environ.get('SUPABASE_SECRET_ACCESS_KEY', '')
+        AWS_STORAGE_BUCKET_NAME = SUPABASE_BUCKET
+        AWS_S3_ENDPOINT_URL = f"{SUPABASE_URL}/storage/v1/s3"
+        AWS_S3_REGION_NAME = os.environ.get('SUPABASE_REGION', 'us-east-1')
+        AWS_S3_USE_SSL = True
+        AWS_S3_VERIFY = True
+        AWS_QUERYSTRING_AUTH = False  # Désactiver l'authentification dans les URLs
+        AWS_DEFAULT_ACL = 'public-read'
+        
+        # Personnalisation des URLs
+        MEDIA_URL = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/"
+        
+        print(f"🌐 MEDIA_URL: {MEDIA_URL}")
+    else:
+        print("⚠️  Supabase Storage non configuré, utilisation du stockage local")
+        DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+        MEDIA_URL = '/media/'
+        MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+else:
+    # 📁 STOCKAGE LOCAL EN DÉVELOPPEMENT
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# ============================================
+# FICHIERS STATIQUES
 # ============================================
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
-# WhiteNoise configuration
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+if IS_RENDER:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ============================================
 # INTERNATIONALISATION
@@ -160,9 +190,8 @@ USE_L10N = True
 # UPLOAD DE FICHIERS
 # ============================================
 
-# Augmenter la limite à 50MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
-FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
 FILE_UPLOAD_HANDLERS = [
@@ -185,10 +214,10 @@ CHAT_ALLOWED_FILE_TYPES = {
 }
 
 CHAT_MAX_FILE_SIZES = {
-    'image': 5 * 1024 * 1024,    # 5 MB
-    'video': 20 * 1024 * 1024,   # 20 MB
-    'audio': 10 * 1024 * 1024,   # 10 MB
-    'document': 10 * 1024 * 1024, # 10 MB
+    'image': 5 * 1024 * 1024,
+    'video': 20 * 1024 * 1024,
+    'audio': 10 * 1024 * 1024,
+    'document': 10 * 1024 * 1024,
     'default': 10 * 1024 * 1024,
 }
 
@@ -198,25 +227,22 @@ CHAT_AUTO_MODERATION_DELAY = 0
 CHAT_FILTERED_WORDS = []
 
 # ============================================
-# SÉCURITÉ POUR LA PRODUCTION
+# SÉCURITÉ
 # ============================================
 
-if not DEBUG:
-    # Sécurité supplémentaire pour les médias
+if not DEBUG and IS_RENDER:
     X_FRAME_OPTIONS = 'DENY'
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    
-    # HSTS (HTTP Strict Transport Security)
-    SECURE_HSTS_SECONDS = 31536000  # 1 an
+    SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
 # ============================================
-# LOGGING (pour debug sur Render)
+# LOGGING
 # ============================================
 
 LOGGING = {
@@ -237,4 +263,4 @@ LOGGING = {
             'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
         },
     },
-}
+    }
